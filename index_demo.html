@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能资产管理系统</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.5.0/dist/Recharts.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+
+    // Icons
+    const RefreshCw = ({ size = 24, className = '' }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+        <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      </svg>
+    );
+
+    const Download = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    );
+
+    const Upload = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    );
+
+    const AssetManager = () => {
+      // 默认演示数据（用户首次访问时使用）
+      const defaultAssets = {
+        liquid: [
+          { name: '现金账户', value: 5000, category: 'cash' },
+          { name: '股票投资', value: 50000, category: 'stocks' },
+          { name: '黄金', value: 15000, category: 'gold' },
+          { name: '基金', value: 10000, category: 'investment' }
+        ],
+        illiquid: [
+          { name: 'KWSP', value: 25000, category: 'retirement' }
+        ],
+        stocks: {
+          malaysia: [],
+          us: []
+        },
+        gold: []
+      };
+
+      const [assets, setAssets] = useState(defaultAssets);
+      const [view, setView] = useState('overview');
+      const [loading, setLoading] = useState(false);
+      const [showValues, setShowValues] = useState(true);
+      const [apiUrl, setApiUrl] = useState(window.location.origin);
+
+      // 从localStorage加载数据
+      useEffect(() => {
+        const savedAssets = localStorage.getItem('assets');
+        if (savedAssets) {
+          try {
+            setAssets(JSON.parse(savedAssets));
+          } catch (e) {
+            console.error('加载数据失败', e);
+          }
+        }
+      }, []);
+
+      // 保存数据到localStorage
+      useEffect(() => {
+        localStorage.setItem('assets', JSON.stringify(assets));
+      }, [assets]);
+
+      const calculateTotalAssets = () => {
+        const liquidTotal = assets.liquid.reduce((sum, item) => sum + item.value, 0);
+        const illiquidTotal = assets.illiquid.reduce((sum, item) => sum + item.value, 0);
+        return liquidTotal + illiquidTotal;
+      };
+
+      const calculateLiquidAssets = () => {
+        return assets.liquid.reduce((sum, item) => sum + item.value, 0);
+      };
+
+      const calculateIlliquidAssets = () => {
+        return assets.illiquid.reduce((sum, item) => sum + item.value, 0);
+      };
+
+      // 更新金价
+      const updateGoldPrice = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch(`${apiUrl}/api/gold-price`);
+          const result = await response.json();
+          
+          if (result.success) {
+            alert(`✅ 金价已更新！\n916金：RM ${result.data.gold_916}/克\n回收价：RM ${result.data.gold_916_buyback_93}/克`);
+          }
+        } catch (error) {
+          alert('❌ 无法连接到API服务器\n请确认服务器正在运行');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // 导出数据
+      const exportData = () => {
+        const dataStr = JSON.stringify(assets, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `资产数据_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+      };
+
+      // 导入数据
+      const importData = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const imported = JSON.parse(e.target.result);
+              setAssets(imported);
+              alert('数据导入成功！');
+            } catch (error) {
+              alert('导入失败，文件格式不正确');
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+
+      const assetDistributionData = [
+        { name: '可动资产', value: calculateLiquidAssets() },
+        { name: '不可动资产', value: calculateIlliquidAssets() }
+      ];
+
+      const categoryDistributionData = [
+        { name: '现金', value: assets.liquid.filter(a => a.category === 'cash').reduce((s, a) => s + a.value, 0) },
+        { name: '股票', value: assets.liquid.filter(a => a.category === 'stocks').reduce((s, a) => s + a.value, 0) },
+        { name: '黄金', value: assets.liquid.filter(a => a.category === 'gold').reduce((s, a) => s + a.value, 0) },
+        { name: '投资', value: assets.liquid.filter(a => a.category === 'investment').reduce((s, a) => s + a.value, 0) },
+        { name: '退休金', value: calculateIlliquidAssets() }
+      ];
+
+      const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <h1 className="text-3xl font-bold text-gray-800">💰 智能资产管理系统</h1>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={exportData}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+                  >
+                    <Download size={20} /> 导出
+                  </button>
+                  <label className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2 cursor-pointer">
+                    <Upload size={20} /> 导入
+                    <input type="file" accept=".json" onChange={importData} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              {/* 总资产显示 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                  <div className="text-sm opacity-90">总资产</div>
+                  <div className="text-3xl font-bold">
+                    {showValues ? `RM ${calculateTotalAssets().toFixed(2)}` : '****'}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
+                  <div className="text-sm opacity-90">可动资产</div>
+                  <div className="text-3xl font-bold">
+                    {showValues ? `RM ${calculateLiquidAssets().toFixed(2)}` : '****'}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+                  <div className="text-sm opacity-90">不可动资产</div>
+                  <div className="text-3xl font-bold">
+                    {showValues ? `RM ${calculateIlliquidAssets().toFixed(2)}` : '****'}
+                  </div>
+                </div>
+              </div>
+
+              {/* API配置 */}
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <label className="block mb-2 text-sm font-semibold">API服务器地址:</label>
+                <input
+                  type="text"
+                  value={apiUrl}
+                  onChange={(e) => setApiUrl(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder="https://your-app.onrender.com"
+                />
+                <p className="mt-2 text-xs text-gray-600">
+                  💡 部署到云端后，在这里输入你的应用网址
+                </p>
+              </div>
+
+              {/* 操作按钮 */}
+              <div className="flex gap-2 mt-4 flex-wrap">
+                <button
+                  onClick={updateGoldPrice}
+                  disabled={loading}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 flex items-center gap-2"
+                >
+                  <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                  测试API连接
+                </button>
+              </div>
+            </div>
+
+            {/* 内容区域 */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-xl font-bold mb-4">资产分布</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={assetDistributionData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {assetDistributionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `RM ${value.toFixed(2)}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold mb-4">资产类别分布</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={categoryDistributionData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {categoryDistributionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `RM ${value.toFixed(2)}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* 使用说明 */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-semibold mb-2">📖 使用说明</h4>
+                <ol className="list-decimal list-inside space-y-1 text-sm">
+                  <li>这是演示版本，包含示例数据</li>
+                  <li>点击"导出"保存你的数据</li>
+                  <li>点击"导入"恢复你的数据</li>
+                  <li>部署API服务器后，输入服务器地址测试连接</li>
+                  <li>所有数据保存在浏览器本地，完全私密</li>
+                </ol>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 text-center text-gray-600 text-sm">
+              <p>💡 提示：数据保存在浏览器本地，请定期导出备份</p>
+              <p className="mt-1">🔒 所有数据仅存储在您的设备上，完全私密安全</p>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<AssetManager />, document.getElementById('root'));
+  </script>
+</body>
+</html>
