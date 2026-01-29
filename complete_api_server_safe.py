@@ -420,7 +420,7 @@ if __name__ == '__main__':
     print("\n📖 文档: http://localhost:5000")
     print("=" * 70)
     
-    host = os.getenv('API_HOST', 'localhost')
+    host = os.getenv('API_HOST', '0.0.0.0')
     port = int(os.getenv('API_PORT', 5000))
     
     app.run(debug=True, host=host, port=port)
