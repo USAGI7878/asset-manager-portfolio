@@ -11,7 +11,6 @@ import re
 from datetime import datetime, timedelta
 import json
 import os
-import pandas as pd
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
