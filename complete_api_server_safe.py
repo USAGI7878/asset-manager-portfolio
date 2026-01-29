@@ -407,20 +407,19 @@ if __name__ == '__main__':
     
     if not ALPHA_VANTAGE_KEY:
         print("\n⚠️  警告: 未配置 Alpha Vantage API 密钥")
-        print("   请创建 .env 文件并添加: ALPHA_VANTAGE_API_KEY=your_key")
     else:
-        print(f"\n✅ Alpha Vantage API 已配置: {ALPHA_VANTAGE_KEY[:8]}...")
+        print(f"\n✅ Alpha Vantage API 已配置")
     
     print("\n📡 可用端点:")
-    print("  - http://localhost:5000/api/gold-price")
-    print("  - http://localhost:5000/api/stock-price/AAPL")
-    print("  - http://localhost:5000/api/stock-prices (POST)")
-    print("  - http://localhost:5000/api/forex-rate?from=USD&to=MYR")
-    print("  - http://localhost:5000/api/parse-statement (POST)")
-    print("\n📖 文档: http://localhost:5000")
+    print("  - /api/gold-price")
+    print("  - /api/stock-price/<symbol>")
+    print("  - /api/stock-prices (POST)")
+    print("  - /api/forex-rate")
+    print("  - /api/health")
+    print("\n📖 文档: /")
     print("=" * 70)
     
-    host = os.getenv('API_HOST', '0.0.0.0')
-    port = int(os.getenv('API_PORT', 5000))
+    # 修复：确保使用环境变量的端口
+    port = int(os.getenv('PORT', 10000))  # ✅ Render会设置PORT环境变量
     
-    app.run(debug=True, host=host, port=port)
+    app.run(host='0.0.0.0', port=port)  # ✅ 简单直接
