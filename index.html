@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能资产管理系统</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.5.0/dist/Recharts.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+
+    // Lucide icons as SVG components
+    const RefreshCw = ({ size = 24, className = '' }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+        <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      </svg>
+    );
+
+    const TrendingUp = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+        <polyline points="17 6 23 6 23 12"/>
+      </svg>
+    );
+
+    const DollarSign = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    );
+
+    const Coins = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="8" cy="8" r="6"/>
+        <path d="M18.09 10.37A6 6 0 1 1 10.34 18"/>
+        <path d="M7 6h1v4"/>
+      </svg>
+    );
+
+    const AlertCircle = ({ size = 24, className = '' }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    );
+
+    const Download = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    );
+
+    const Upload = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    );
+
+    const Plus = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    );
+
+    const Eye = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    );
+
+    const EyeOff = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+    );
+
+    const AssetManager = () => {
+      const [assets, setAssets] = useState({
+        liquid: [
+          { name: 'TNG', value: 51.83, category: 'cash' },
+          { name: 'RKT（现金)', value: 206.79, category: 'cash' },
+          { name: 'ASNB', value: 5470.83, category: 'investment' },
+          { name: '股票MOOMOO', value: 51373.99, category: 'stocks' },
+          { name: '股票webull', value: 974.37, category: 'stocks' },
+          { name: 'KDI', value: 734.68, category: 'investment' },
+          { name: 'Zus', value: 41.55, category: 'insurance' },
+          { name: '实体黄金', value: 17524.88, category: 'gold' }
+        ],
+        illiquid: [
+          { name: 'KWSP', value: 25411.71, category: 'retirement' }
+        ],
+        stocks: {
+          malaysia: [
+            { code: 'MAYBANK(1155)', value: 1102, quantity: 100, profit: 30, weight: 0.0243 },
+            { code: 'KLCC', value: 909, quantity: 100, profit: 8.76, weight: 0.02 },
+            { code: '99SMART(5326)', value: 391, quantity: 100, profit: 2.25, weight: 0.0086 }
+          ],
+          us: [
+            { code: 'VOO', value: 2777.46, quantity: 4.3514, profit: 16.25, weight: 0.2483 },
+            { code: 'TSM', value: 227.43, quantity: 0.7, profit: 0.58, weight: 0.0206 },
+            { code: 'TSLA', value: 43.50, quantity: 0.1, profit: 0, weight: 0.0039 }
+          ]
+        },
+        gold: [
+          { name: '蝴蝶安全链', weight: 3.25, buyPrice: 1164, cost: 1164, estimatedValue: 1690, profitLoss: 526 },
+          { name: '汉堡', weight: 0.3, buyPrice: 229, cost: 189, estimatedValue: 156, profitLoss: -33 },
+          { name: '平安锁', weight: 3.56, buyPrice: 1299, cost: 1299, estimatedValue: 1851, profitLoss: 552 },
+          { name: '葫芦手绳', weight: 0.45, buyPrice: 188, cost: 188, estimatedValue: 234, profitLoss: 46 },
+          { name: '薯条', weight: 0.3, buyPrice: 229, cost: 215.26, estimatedValue: 156, profitLoss: -59.26 },
+          { name: '蛇鳞戒指', weight: 2.39, buyPrice: 1031, cost: 1031, estimatedValue: 1243, profitLoss: 212 },
+          { name: '可乐', weight: 0.3, buyPrice: 199, cost: 199, estimatedValue: 156, profitLoss: -43 },
+          { name: '宝格丽手镯', weight: 11.73, buyPrice: 4656, cost: 4656, estimatedValue: 6100, profitLoss: 1444 }
+        ]
+      });
+
+      const [view, setView] = useState('overview');
+      const [loading, setLoading] = useState(false);
+      const [aiAnalysis, setAiAnalysis] = useState(null);
+      const [showValues, setShowValues] = useState(true);
+      const [goldPrice, setGoldPrice] = useState(520);
+      const [historicalData, setHistoricalData] = useState([]);
+
+      // 从localStorage加载数据
+      useEffect(() => {
+        const savedAssets = localStorage.getItem('assets');
+        const savedHistory = localStorage.getItem('historicalData');
+        
+        if (savedAssets) {
+          try {
+            setAssets(JSON.parse(savedAssets));
+          } catch (e) {
+            console.error('加载资产数据失败', e);
+          }
+        }
+        
+        if (savedHistory) {
+          try {
+            setHistoricalData(JSON.parse(savedHistory));
+          } catch (e) {
+            console.error('加载历史数据失败', e);
+          }
+        }
+      }, []);
+
+      // 保存数据到localStorage
+      useEffect(() => {
+        localStorage.setItem('assets', JSON.stringify(assets));
+      }, [assets]);
+
+      useEffect(() => {
+        if (historicalData.length > 0) {
+          localStorage.setItem('historicalData', JSON.stringify(historicalData));
+        }
+      }, [historicalData]);
+
+      const calculateTotalAssets = () => {
+        const liquidTotal = assets.liquid.reduce((sum, item) => sum + item.value, 0);
+        const illiquidTotal = assets.illiquid.reduce((sum, item) => sum + item.value, 0);
+        return liquidTotal + illiquidTotal;
+      };
+
+      const calculateLiquidAssets = () => {
+        return assets.liquid.reduce((sum, item) => sum + item.value, 0);
+      };
+
+      const calculateIlliquidAssets = () => {
+        return assets.illiquid.reduce((sum, item) => sum + item.value, 0);
+      };
+
+      const updateGoldPrices = () => {
+        const updatedGold = assets.gold.map(item => {
+          const newEstimatedValue = item.weight * goldPrice;
+          return {
+            ...item,
+            estimatedValue: parseFloat(newEstimatedValue.toFixed(2)),
+            profitLoss: parseFloat((newEstimatedValue - item.cost).toFixed(2))
+          };
+        });
+
+        const totalGoldValue = updatedGold.reduce((sum, item) => sum + item.estimatedValue, 0);
+        
+        const updatedLiquid = assets.liquid.map(item => 
+          item.name === '实体黄金' ? { ...item, value: totalGoldValue } : item
+        );
+
+        setAssets({ ...assets, gold: updatedGold, liquid: updatedLiquid });
+      };
+
+      const updateStockPrices = async () => {
+        setLoading(true);
+        setTimeout(() => {
+          setLoading(false);
+          alert('股价更新功能需要连接到实际的API服务（如Yahoo Finance、Alpha Vantage等）');
+        }, 1000);
+      };
+
+      const getAIAnalysis = async () => {
+        setLoading(true);
+        
+        const totalAssets = calculateTotalAssets();
+        const liquidAssets = calculateLiquidAssets();
+        const stocksValue = assets.liquid.find(a => a.category === 'stocks')?.value || 0;
+        const goldValue = assets.liquid.find(a => a.category === 'gold')?.value || 0;
+        
+        const prompt = `作为专业的财务顾问，请分析以下资产配置并提供建议：
+
+总资产: RM ${totalAssets.toFixed(2)}
+可动资产: RM ${liquidAssets.toFixed(2)}
+股票投资: RM ${stocksValue.toFixed(2)} (${((stocksValue/totalAssets)*100).toFixed(1)}%)
+黄金投资: RM ${goldValue.toFixed(2)} (${((goldValue/totalAssets)*100).toFixed(1)}%)
+退休金(KWSP): RM ${assets.illiquid[0].value.toFixed(2)}
+
+请提供：
+1. 资产配置评估（风险等级）
+2. 具体改进建议
+3. 风险提示
+4. 未来规划建议
+
+请用简洁的JSON格式回复，包含：risk_level, suggestions (数组), warnings (数组), recommendations (数组)`;
+
+        try {
+          const response = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 1000,
+              messages: [
+                { role: "user", content: prompt }
+              ],
+            })
+          });
+
+          const data = await response.json();
+          const analysisText = data.content[0].text;
+          
+          try {
+            const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const analysis = JSON.parse(jsonMatch[0]);
+              setAiAnalysis(analysis);
+            } else {
+              setAiAnalysis({ raw: analysisText });
+            }
+          } catch {
+            setAiAnalysis({ raw: analysisText });
+          }
+        } catch (error) {
+          console.error('AI分析失败:', error);
+          alert('AI分析功能暂时不可用');
+        }
+        
+        setLoading(false);
+      };
+
+      const saveSnapshot = () => {
+        const snapshot = {
+          date: new Date().toISOString(),
+          totalValue: calculateTotalAssets(),
+          liquidValue: calculateLiquidAssets(),
+          illiquidValue: calculateIlliquidAssets()
+        };
+        
+        const newHistory = [...historicalData, snapshot].slice(-30);
+        setHistoricalData(newHistory);
+        alert('资产快照已保存！');
+      };
+
+      const exportData = () => {
+        const dataStr = JSON.stringify({ assets, historicalData }, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `资产数据_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+      };
+
+      const importData = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const imported = JSON.parse(e.target.result);
+              setAssets(imported.assets);
+              if (imported.historicalData) {
+                setHistoricalData(imported.historicalData);
+              }
+              alert('数据导入成功！');
+            } catch (error) {
+              alert('导入失败，文件格式不正确');
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+
+      const assetDistributionData = [
+        { name: '可动资产', value: calculateLiquidAssets() },
+        { name: '不可动资产', value: calculateIlliquidAssets() }
+      ];
+
+      const categoryDistributionData = [
+        { name: '现金', value: assets.liquid.filter(a => a.category === 'cash').reduce((s, a) => s + a.value, 0) },
+        { name: '股票', value: assets.liquid.filter(a => a.category === 'stocks').reduce((s, a) => s + a.value, 0) },
+        { name: '黄金', value: assets.liquid.filter(a => a.category === 'gold').reduce((s, a) => s + a.value, 0) },
+        { name: '投资', value: assets.liquid.filter(a => a.category === 'investment').reduce((s, a) => s + a.value, 0) },
+        { name: '保险', value: assets.liquid.filter(a => a.category === 'insurance').reduce((s, a) => s + a.value, 0) },
+        { name: '退休金', value: calculateIlliquidAssets() }
+      ];
+
+      const goldProfitData = assets.gold.map(item => ({
+        name: item.name,
+        profit: item.profitLoss,
+        value: item.estimatedValue
+      }));
+
+      const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <h1 className="text-3xl font-bold text-gray-800">💰 智能资产管理系统</h1>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setShowValues(!showValues)}
+                    className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 flex items-center gap-2"
+                  >
+                    {showValues ? <Eye size={20} /> : <EyeOff size={20} />}
+                    {showValues ? '隐藏' : '显示'}金额
+                  </button>
+                  <button
+                    onClick={exportData}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+                  >
+                    <Download size={20} /> 导出
+                  </button>
+                  <label className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2 cursor-pointer">
+                    <Upload size={20} /> 导入
+                    <input type="file" accept=".json" onChange={importData} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                  <div className="text-sm opacity-90">总资产</div>
+                  <div className="text-3xl font-bold">
+                    {showValues ? `RM ${calculateTotalAssets().toFixed(2)}` : '****'}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white">
+                  <div className="text-sm opacity-90">可动资产</div>
+                  <div className="text-3xl font-bold">
+                    {showValues ? `RM ${calculateLiquidAssets().toFixed(2)}` : '****'}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+                  <div className="text-sm opacity-90">不可动资产</div>
+                  <div className="text-3xl font-bold">
+                    {showValues ? `RM ${calculateIlliquidAssets().toFixed(2)}` : '****'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-4 flex-wrap">
+                <button
+                  onClick={updateStockPrices}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 flex items-center gap-2"
+                >
+                  <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                  更新股价
+                </button>
+                <button
+                  onClick={updateGoldPrices}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center gap-2"
+                >
+                  <Coins size={16} />
+                  更新金价 (RM {goldPrice}/g)
+                </button>
+                <button
+                  onClick={getAIAnalysis}
+                  disabled={loading}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:bg-gray-400 flex items-center gap-2"
+                >
+                  <TrendingUp size={16} />
+                  AI分析
+                </button>
+                <button
+                  onClick={saveSnapshot}
+                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 flex items-center gap-2"
+                >
+                  <Plus size={16} />
+                  保存快照
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg mb-6">
+              <div className="flex border-b overflow-x-auto">
+                {['overview', 'stocks', 'gold', 'trend', 'ai'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setView(tab)}
+                    className={`px-6 py-3 font-medium whitespace-nowrap ${
+                      view === tab
+                        ? 'border-b-2 border-blue-500 text-blue-600'
+                        : 'text-gray-600 hover:text-blue-600'
+                    }`}
+                  >
+                    {tab === 'overview' && '📊 总览'}
+                    {tab === 'stocks' && '📈 股票'}
+                    {tab === 'gold' && '🏆 黄金'}
+                    {tab === 'trend' && '📉 趋势'}
+                    {tab === 'ai' && '🤖 AI分析'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              {view === 'overview' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-xl font-bold mb-4">资产分布</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={assetDistributionData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {assetDistributionData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => `RM ${value.toFixed(2)}`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-bold mb-4">资产类别分布</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={categoryDistributionData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {categoryDistributionData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => `RM ${value.toFixed(2)}`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {view === 'stocks' && (
+                <div>
+                  <h3 className="text-xl font-bold mb-4">股票持仓</h3>
+                  
+                  <div className="mb-6">
+                    <h4 className="font-semibold mb-2">马来西亚股票</h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left">代码</th>
+                            <th className="px-4 py-2 text-right">市值</th>
+                            <th className="px-4 py-2 text-right">数量</th>
+                            <th className="px-4 py-2 text-right">已实现盈亏</th>
+                            <th className="px-4 py-2 text-right">持仓占比</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {assets.stocks.malaysia.map((stock, idx) => (
+                            <tr key={idx} className="border-b hover:bg-gray-50">
+                              <td className="px-4 py-2">{stock.code}</td>
+                              <td className="px-4 py-2 text-right">
+                                {showValues ? `RM ${stock.value}` : '****'}
+                              </td>
+                              <td className="px-4 py-2 text-right">{stock.quantity}</td>
+                              <td className={`px-4 py-2 text-right ${stock.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {showValues ? `RM ${stock.profit}` : '****'}
+                              </td>
+                              <td className="px-4 py-2 text-right">{(stock.weight * 100).toFixed(2)}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">美国股票</h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left">代码</th>
+                            <th className="px-4 py-2 text-right">市值</th>
+                            <th className="px-4 py-2 text-right">数量</th>
+                            <th className="px-4 py-2 text-right">已实现盈亏</th>
+                            <th className="px-4 py-2 text-right">持仓占比</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {assets.stocks.us.map((stock, idx) => (
+                            <tr key={idx} className="border-b hover:bg-gray-50">
+                              <td className="px-4 py-2">{stock.code}</td>
+                              <td className="px-4 py-2 text-right">
+                                {showValues ? `$${stock.value}` : '****'}
+                              </td>
+                              <td className="px-4 py-2 text-right">{stock.quantity}</td>
+                              <td className={`px-4 py-2 text-right ${stock.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {showValues ? `$${stock.profit}` : '****'}
+                              </td>
+                              <td className="px-4 py-2 text-right">{(stock.weight * 100).toFixed(2)}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-2">持仓占比图</h4>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={[...assets.stocks.malaysia, ...assets.stocks.us]}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="code" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => `${(value * 100).toFixed(2)}%`} />
+                        <Legend />
+                        <Bar dataKey="weight" fill="#8884d8" name="持仓占比" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {view === 'gold' && (
+                <div>
+                  <h3 className="text-xl font-bold mb-4">黄金持仓 (916金)</h3>
+                  
+                  <div className="mb-4 p-4 bg-yellow-50 rounded-lg">
+                    <label className="block mb-2 font-semibold">当前金价 (RM/克):</label>
+                    <input
+                      type="number"
+                      value={goldPrice}
+                      onChange={(e) => setGoldPrice(parseFloat(e.target.value))}
+                      className="px-4 py-2 border rounded-lg w-full md:w-64"
+                    />
+                  </div>
+
+                  <div className="overflow-x-auto mb-6">
+                    <table className="w-full">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left">名称</th>
+                          <th className="px-4 py-2 text-right">克重</th>
+                          <th className="px-4 py-2 text-right">买入价</th>
+                          <th className="px-4 py-2 text-right">成本</th>
+                          <th className="px-4 py-2 text-right">估算回收价</th>
+                          <th className="px-4 py-2 text-right">盈亏</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {assets.gold.map((item, idx) => (
+                          <tr key={idx} className="border-b hover:bg-gray-50">
+                            <td className="px-4 py-2">{item.name}</td>
+                            <td className="px-4 py-2 text-right">{item.weight}g</td>
+                            <td className="px-4 py-2 text-right">
+                              {showValues ? `RM ${item.buyPrice}` : '****'}
+                            </td>
+                            <td className="px-4 py-2 text-right">
+                              {showValues ? `RM ${item.cost}` : '****'}
+                            </td>
+                            <td className="px-4 py-2 text-right">
+                              {showValues ? `RM ${item.estimatedValue.toFixed(2)}` : '****'}
+                            </td>
+                            <td className={`px-4 py-2 text-right font-semibold ${item.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {showValues ? `RM ${item.profitLoss.toFixed(2)}` : '****'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">黄金盈亏分析</h4>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={goldProfitData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="profit" fill="#FFD700" name="盈亏 (RM)" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {view === 'trend' && (
+                <div>
+                  <h3 className="text-xl font-bold mb-4">资产趋势</h3>
+                  
+                  {historicalData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={400}>
+                      <LineChart data={historicalData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(date) => new Date(date).toLocaleDateString('zh-CN')}
+                        />
+                        <YAxis />
+                        <Tooltip 
+                          labelFormatter={(date) => new Date(date).toLocaleString('zh-CN')}
+                          formatter={(value) => `RM ${value.toFixed(2)}`}
+                        />
+                        <Legend />
+                        <Line type="monotone" dataKey="totalValue" stroke="#8884d8" name="总资产" />
+                        <Line type="monotone" dataKey="liquidValue" stroke="#82ca9d" name="可动资产" />
+                        <Line type="monotone" dataKey="illiquidValue" stroke="#ffc658" name="不可动资产" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      <AlertCircle size={48} className="mx-auto mb-4 opacity-50" />
+                      <p>暂无历史数据</p>
+                      <p className="text-sm mt-2">点击"保存快照"按钮开始记录资产变化</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {view === 'ai' && (
+                <div>
+                  <h3 className="text-xl font-bold mb-4">AI 资产分析</h3>
+                  
+                  {!aiAnalysis ? (
+                    <div className="text-center py-12">
+                      <TrendingUp size={48} className="mx-auto mb-4 text-purple-500" />
+                      <p className="text-gray-600 mb-4">点击"AI分析"按钮获取专业的资产配置建议</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {aiAnalysis.raw ? (
+                        <div className="prose max-w-none">
+                          <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
+                            {aiAnalysis.raw}
+                          </pre>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <h4 className="font-semibold mb-2">风险等级</h4>
+                            <p className="text-lg">{aiAnalysis.risk_level}</p>
+                          </div>
+
+                          <div className="bg-green-50 p-4 rounded-lg">
+                            <h4 className="font-semibold mb-2">改进建议</h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {aiAnalysis.suggestions?.map((s, i) => (
+                                <li key={i}>{s}</li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div className="bg-yellow-50 p-4 rounded-lg">
+                            <h4 className="font-semibold mb-2">风险提示</h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {aiAnalysis.warnings?.map((w, i) => (
+                                <li key={i}>{w}</li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div className="bg-purple-50 p-4 rounded-lg">
+                            <h4 className="font-semibold mb-2">未来规划</h4>
+                            <ul className="list-disc list-inside space-y-1">
+                              {aiAnalysis.recommendations?.map((r, i) => (
+                                <li key={i}>{r}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 text-center text-gray-600 text-sm">
+              <p>💡 提示：数据保存在浏览器本地，请定期导出备份</p>
+              <p className="mt-1">🔒 所有数据仅存储在您的设备上，完全私密安全</p>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<AssetManager />, document.getElementById('root'));
+  </script>
+</body>
+</html>
