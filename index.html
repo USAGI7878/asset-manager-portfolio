@@ -412,9 +412,13 @@
           </button>
           <button class="btn-primary" onclick="exportData()">💾 导出</button>
           <button class="btn-success" onclick="document.getElementById('importFile').click()">
-            📤 导入
+            📤 导入备份
+          </button>
+          <button class="btn-warning" onclick="document.getElementById('statementFile').click()">
+            📄 导入账单
           </button>
           <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display:none">
+          <input type="file" id="statementFile" accept=".xlsx,.xls,.csv,.pdf" onchange="importStatement(event)" style="display:none">
         </div>
       </div>
 
@@ -1115,6 +1119,112 @@
         };
         reader.readAsText(file);
       }
+    }
+    
+    // 导入账单
+    async function importStatement(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const apiUrl = document.getElementById('apiUrl').value.trim();
+      if (!apiUrl) {
+        alert('请先配置API服务器地址');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        // 显示加载提示
+        const loadingMsg = document.createElement('div');
+        loadingMsg.id = 'loadingMsg';
+        loadingMsg.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:30px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.3); z-index:2000; text-align:center;';
+        loadingMsg.innerHTML = '<div class="loading" style="width:40px; height:40px; margin:0 auto 16px"></div><div style="font-size:18px; font-weight:600">正在解析账单...</div><div style="color:#718096; margin-top:8px">请稍候</div>';
+        document.body.appendChild(loadingMsg);
+        
+        const response = await fetch(`${apiUrl}/api/parse-statement`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        // 移除加载提示
+        document.body.removeChild(loadingMsg);
+        
+        if (result.success) {
+          // 合并数据
+          const data = result.data;
+          
+          let totalImported = 0;
+          
+          // 合并可动资产
+          if (data.liquid_assets && data.liquid_assets.length > 0) {
+            data.liquid_assets.forEach(asset => {
+              if (!isNaN(asset.value) && asset.value > 0) {
+                assets.liquid.push({
+                  id: Date.now() + Math.random(),
+                  ...asset
+                });
+                totalImported++;
+              }
+            });
+          }
+          
+          // 合并不可动资产
+          if (data.illiquid_assets && data.illiquid_assets.length > 0) {
+            data.illiquid_assets.forEach(asset => {
+              if (!isNaN(asset.value) && asset.value > 0) {
+                assets.illiquid.push({
+                  id: Date.now() + Math.random(),
+                  ...asset
+                });
+                totalImported++;
+              }
+            });
+          }
+          
+          // 合并马股
+          if (data.stocks_my && data.stocks_my.length > 0) {
+            assets.stocks.malaysia.push(...data.stocks_my);
+            totalImported += data.stocks_my.length;
+          }
+          
+          // 合并美股
+          if (data.stocks_us && data.stocks_us.length > 0) {
+            assets.stocks.us.push(...data.stocks_us);
+            totalImported += data.stocks_us.length;
+          }
+          
+          // 合并黄金
+          if (data.gold && data.gold.length > 0) {
+            data.gold.forEach(gold => {
+              assets.gold.push({
+                id: Date.now() + Math.random(),
+                ...gold
+              });
+              totalImported++;
+            });
+          }
+          
+          saveData();
+          updateUI();
+          
+          alert(`✅ 账单导入成功！\n\n共导入 ${totalImported} 项资产\n- 可动资产: ${data.liquid_assets.length}\n- 不可动资产: ${data.illiquid_assets.length}\n- 马股: ${data.stocks_my.length}\n- 美股: ${data.stocks_us.length}\n- 黄金: ${data.gold.length}`);
+        } else {
+          alert('❌ 账单解析失败: ' + result.error);
+        }
+      } catch (error) {
+        // 移除加载提示
+        const loadingMsg = document.getElementById('loadingMsg');
+        if (loadingMsg) document.body.removeChild(loadingMsg);
+        
+        alert('❌ 账单导入失败: ' + error.message);
+      }
+      
+      // 清空文件输入
+      event.target.value = '';
     }
     
     // API 功能
