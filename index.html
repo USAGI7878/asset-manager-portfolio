@@ -3,119 +3,1107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>资产管理系统</title>
+  <title>💰 Smart Asset Management System</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.5.0/dist/Recharts.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100">
-  <div class="container mx-auto p-8">
-    <div class="bg-white rounded-lg shadow-lg p-6">
-      <h1 class="text-3xl font-bold text-gray-800 mb-6">💰 智能资产管理系统</h1>
-      
-      <!-- API配置 -->
-      <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-        <label class="block mb-2 font-semibold">API服务器地址:</label>
-        <input 
-          type="text" 
-          id="apiUrl" 
-          class="w-full px-4 py-2 border rounded-lg mb-3"
-          placeholder="https://your-app.onrender.com"
-        />
-        <button 
-          onclick="testApi()" 
-          class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          🔍 测试API连接
-        </button>
-        <button 
-          onclick="getGoldPrice()" 
-          class="ml-2 px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-        >
-          💰 获取金价
-        </button>
-      </div>
-
-      <!-- 结果显示 -->
-      <div id="result" class="p-4 bg-gray-50 rounded-lg min-h-[100px]">
-        <p class="text-gray-600">等待测试...</p>
-      </div>
-
-      <!-- 使用说明 -->
-      <div class="mt-6 p-4 bg-green-50 rounded-lg">
-        <h3 class="font-semibold mb-2">📖 使用说明：</h3>
-        <ol class="list-decimal list-inside space-y-1 text-sm">
-          <li>输入你的Render API地址（例如：https://asset-manager-xxxx.onrender.com）</li>
-          <li>点击"测试API连接"检查后端是否正常</li>
-          <li>点击"获取金价"查看实时916金价</li>
-          <li>确认功能正常后，我们再添加完整界面</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const savedUrl = localStorage.getItem('apiUrl');
-      if (savedUrl) {
-        document.getElementById('apiUrl').value = savedUrl;
-      }
-    });
-
-    async function testApi() {
-      const apiUrl = document.getElementById('apiUrl').value.trim();
-      if (!apiUrl) {
-        alert('请输入API服务器地址');
-        return;
-      }
-      localStorage.setItem('apiUrl', apiUrl);
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = '<p class="text-blue-600">⏳ 正在连接...</p>';
-      try {
-        const response = await fetch(`${apiUrl}/api/health`);
-        const data = await response.json();
-        resultDiv.innerHTML = `
-          <div class="text-green-600">
-            <p class="font-bold mb-2">✅ API连接成功！</p>
-            <pre class="text-sm bg-white p-3 rounded">${JSON.stringify(data, null, 2)}</pre>
-          </div>
-        `;
-      } catch (error) {
-        resultDiv.innerHTML = `
-          <div class="text-red-600">
-            <p class="font-bold">❌ 连接失败</p>
-            <p class="text-sm mt-2">${error.message}</p>
-          </div>
-        `;
-      }
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
     }
+    .animate-spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
 
-    async function getGoldPrice() {
-      const apiUrl = document.getElementById('apiUrl').value.trim();
-      if (!apiUrl) {
-        alert('请先输入API服务器地址');
-        return;
-      }
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = '<p class="text-blue-600">⏳ 正在获取金价...</p>';
-      try {
-        const response = await fetch(`${apiUrl}/api/gold-price`);
-        const data = await response.json();
-        if (data.success) {
-          const prices = data.data;
-          resultDiv.innerHTML = `
-            <div class="text-green-600">
-              <p class="font-bold text-xl mb-3">✅ 916金价已更新！</p>
-              <div class="bg-white p-4 rounded space-y-2">
-                <p><span class="font-semibold">零售价:</span> RM ${prices.gold_916}/克</p>
-                <p><span class="font-semibold">回收价 (93%):</span> RM ${prices.gold_916_buyback_93}/克</p>
-                <p class="text-sm text-gray-600 mt-3">更新时间: ${prices.last_updated}</p>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+
+    // Icons Components
+    const RefreshCw = ({ size = 24, className = '' }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+        <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      </svg>
+    );
+
+    const Download = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    );
+
+    const Upload = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    );
+
+    const TrendingUp = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+        <polyline points="17 6 23 6 23 12"/>
+      </svg>
+    );
+
+    const DollarSign = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    );
+
+    const PlusCircle = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+    );
+
+    const Edit = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+    );
+
+    const Trash = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      </svg>
+    );
+
+    const Eye = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    );
+
+    const EyeOff = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+    );
+
+    const FileText = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>
+    );
+
+    const SmartAssetManager = () => {
+      // 默认演示数据
+      const defaultAssets = {
+        liquid: [
+          { id: 1, name: '现金账户', value: 5000, category: 'cash', notes: '紧急备用金' },
+          { id: 2, name: '股票投资', value: 50000, category: 'stocks', notes: 'US & MY 股票' },
+          { id: 3, name: '黄金', value: 15000, category: 'gold', notes: '916金实物' },
+          { id: 4, name: '基金', value: 10000, category: 'investment', notes: '指数基金' }
+        ],
+        illiquid: [
+          { id: 5, name: 'KWSP (EPF)', value: 25000, category: 'retirement', notes: '公积金' }
+        ],
+        stocks: {
+          malaysia: [
+            { symbol: 'TOPGLOV', name: 'Top Glove', shares: 1000, avgPrice: 2.50, currentPrice: 0, exchange: 'MY' },
+            { symbol: 'MAYBANK', name: 'Maybank', shares: 500, avgPrice: 8.50, currentPrice: 0, exchange: 'MY' }
+          ],
+          us: [
+            { symbol: 'VOO', name: 'Vanguard S&P 500 ETF', shares: 10, avgPrice: 400, currentPrice: 0, exchange: 'US' },
+            { symbol: 'AAPL', name: 'Apple Inc', shares: 5, avgPrice: 150, currentPrice: 0, exchange: 'US' }
+          ]
+        },
+        gold: [
+          { id: 1, name: '916金项链', weight: 10, buyPrice: 300, notes: '结婚纪念' },
+          { id: 2, name: '916金手镯', weight: 15, buyPrice: 310, notes: '生日礼物' }
+        ],
+        history: []
+      };
+
+      const [assets, setAssets] = useState(defaultAssets);
+      const [view, setView] = useState('overview');
+      const [loading, setLoading] = useState(false);
+      const [showValues, setShowValues] = useState(true);
+      const [apiUrl, setApiUrl] = useState('');
+      const [goldPrice, setGoldPrice] = useState({ retail: 0, buyback: 0, updated: '' });
+      const [forexRate, setForexRate] = useState(4.5);
+      const [showAddAsset, setShowAddAsset] = useState(false);
+      const [showAddStock, setShowAddStock] = useState(false);
+      const [showAddGold, setShowAddGold] = useState(false);
+      const [editingAsset, setEditingAsset] = useState(null);
+      const fileInputRef = useRef(null);
+
+      // 从localStorage加载数据
+      useEffect(() => {
+        const savedAssets = localStorage.getItem('smartAssets');
+        const savedApiUrl = localStorage.getItem('apiUrl');
+        
+        if (savedAssets) {
+          try {
+            setAssets(JSON.parse(savedAssets));
+          } catch (e) {
+            console.error('加载数据失败', e);
+          }
+        }
+        
+        if (savedApiUrl) {
+          setApiUrl(savedApiUrl);
+        }
+      }, []);
+
+      // 保存数据到localStorage
+      useEffect(() => {
+        localStorage.setItem('smartAssets', JSON.stringify(assets));
+      }, [assets]);
+
+      useEffect(() => {
+        if (apiUrl) {
+          localStorage.setItem('apiUrl', apiUrl);
+        }
+      }, [apiUrl]);
+
+      // 计算总资产
+      const calculateTotalAssets = () => {
+        const liquidTotal = assets.liquid.reduce((sum, item) => sum + item.value, 0);
+        const illiquidTotal = assets.illiquid.reduce((sum, item) => sum + item.value, 0);
+        return liquidTotal + illiquidTotal;
+      };
+
+      const calculateLiquidAssets = () => {
+        return assets.liquid.reduce((sum, item) => sum + item.value, 0);
+      };
+
+      const calculateIlliquidAssets = () => {
+        return assets.illiquid.reduce((sum, item) => sum + item.value, 0);
+      };
+
+      // API调用函数
+      const updateGoldPrice = async () => {
+        if (!apiUrl) {
+          alert('请先输入API服务器地址');
+          return;
+        }
+        
+        setLoading(true);
+        try {
+          const response = await fetch(`${apiUrl}/api/gold-price`);
+          const result = await response.json();
+          
+          if (result.success) {
+            setGoldPrice({
+              retail: result.data.gold_916,
+              buyback: result.data.gold_916_buyback_93,
+              updated: result.data.last_updated
+            });
+            alert(`✅ 金价已更新！\n零售价：RM ${result.data.gold_916}/克\n回收价：RM ${result.data.gold_916_buyback_93}/克`);
+          }
+        } catch (error) {
+          alert('❌ 无法连接到API服务器\n' + error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const updateStockPrice = async (symbol, exchange = 'US') => {
+        if (!apiUrl) {
+          alert('请先配置API服务器地址');
+          return;
+        }
+        
+        try {
+          const response = await fetch(`${apiUrl}/api/stock-price/${symbol}?exchange=${exchange}`);
+          const result = await response.json();
+          
+          if (result.success) {
+            return result.data.price;
+          }
+        } catch (error) {
+          console.error('获取股价失败:', error);
+        }
+        return null;
+      };
+
+      const updateAllStockPrices = async () => {
+        setLoading(true);
+        try {
+          const updatedStocks = { ...assets.stocks };
+          
+          // 更新美股
+          for (let stock of updatedStocks.us) {
+            const price = await updateStockPrice(stock.symbol, 'US');
+            if (price) stock.currentPrice = price;
+          }
+          
+          // 更新马股
+          for (let stock of updatedStocks.malaysia) {
+            const price = await updateStockPrice(stock.symbol, 'MY');
+            if (price) stock.currentPrice = price;
+          }
+          
+          setAssets(prev => ({ ...prev, stocks: updatedStocks }));
+          alert('✅ 股票价格已更新！');
+        } catch (error) {
+          alert('❌ 更新失败: ' + error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const getForexRate = async () => {
+        if (!apiUrl) return;
+        
+        try {
+          const response = await fetch(`${apiUrl}/api/forex-rate?from=USD&to=MYR`);
+          const result = await response.json();
+          
+          if (result.success) {
+            setForexRate(result.data.rate);
+          }
+        } catch (error) {
+          console.error('获取汇率失败:', error);
+        }
+      };
+
+      // 文件操作
+      const exportData = () => {
+        const dataStr = JSON.stringify(assets, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `资产数据_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const importData = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const imported = JSON.parse(e.target.result);
+              setAssets(imported);
+              alert('✅ 数据导入成功！');
+            } catch (error) {
+              alert('❌ 导入失败，文件格式不正确');
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+
+      const handleStatementUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file || !apiUrl) {
+          alert('请先配置API服务器地址');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('platform', 'moomoo'); // 可以添加选择器
+
+        setLoading(true);
+        try {
+          const response = await fetch(`${apiUrl}/api/parse-statement`, {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // 处理解析的账单数据
+            alert('✅ 账单解析成功！');
+            console.log(result.data);
+          }
+        } catch (error) {
+          alert('❌ 账单解析失败: ' + error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // 资产管理函数
+      const addAsset = (asset) => {
+        const newAsset = {
+          ...asset,
+          id: Date.now(),
+          value: parseFloat(asset.value)
+        };
+        
+        if (asset.type === 'liquid') {
+          setAssets(prev => ({
+            ...prev,
+            liquid: [...prev.liquid, newAsset]
+          }));
+        } else {
+          setAssets(prev => ({
+            ...prev,
+            illiquid: [...prev.illiquid, newAsset]
+          }));
+        }
+        
+        setShowAddAsset(false);
+      };
+
+      const updateAsset = (id, type, updatedData) => {
+        setAssets(prev => ({
+          ...prev,
+          [type]: prev[type].map(item => 
+            item.id === id ? { ...item, ...updatedData } : item
+          )
+        }));
+        setEditingAsset(null);
+      };
+
+      const deleteAsset = (id, type) => {
+        if (confirm('确定要删除这项资产吗？')) {
+          setAssets(prev => ({
+            ...prev,
+            [type]: prev[type].filter(item => item.id !== id)
+          }));
+        }
+      };
+
+      const addStock = (stock) => {
+        const newStock = {
+          ...stock,
+          shares: parseFloat(stock.shares),
+          avgPrice: parseFloat(stock.avgPrice),
+          currentPrice: 0
+        };
+        
+        const market = stock.exchange === 'US' ? 'us' : 'malaysia';
+        
+        setAssets(prev => ({
+          ...prev,
+          stocks: {
+            ...prev.stocks,
+            [market]: [...prev.stocks[market], newStock]
+          }
+        }));
+        
+        setShowAddStock(false);
+      };
+
+      const addGold = (gold) => {
+        const newGold = {
+          ...gold,
+          id: Date.now(),
+          weight: parseFloat(gold.weight),
+          buyPrice: parseFloat(gold.buyPrice)
+        };
+        
+        setAssets(prev => ({
+          ...prev,
+          gold: [...prev.gold, newGold]
+        }));
+        
+        setShowAddGold(false);
+      };
+
+      // 图表数据
+      const assetDistributionData = [
+        { name: '可动资产', value: calculateLiquidAssets(), color: '#0088FE' },
+        { name: '不可动资产', value: calculateIlliquidAssets(), color: '#00C49F' }
+      ];
+
+      const categoryDistributionData = [
+        { name: '现金', value: assets.liquid.filter(a => a.category === 'cash').reduce((s, a) => s + a.value, 0), color: '#0088FE' },
+        { name: '股票', value: assets.liquid.filter(a => a.category === 'stocks').reduce((s, a) => s + a.value, 0), color: '#00C49F' },
+        { name: '黄金', value: assets.liquid.filter(a => a.category === 'gold').reduce((s, a) => s + a.value, 0), color: '#FFBB28' },
+        { name: '投资', value: assets.liquid.filter(a => a.category === 'investment').reduce((s, a) => s + a.value, 0), color: '#FF8042' },
+        { name: '退休金', value: calculateIlliquidAssets(), color: '#8884D8' }
+      ];
+
+      const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+
+      // 渲染不同视图
+      const renderOverview = () => (
+        <div className="space-y-6">
+          {/* 总资产卡片 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm opacity-90">总资产</div>
+                <DollarSign size={24} />
+              </div>
+              <div className="text-3xl font-bold">
+                {showValues ? `RM ${calculateTotalAssets().toLocaleString('en-MY', {minimumFractionDigits: 2})}` : '****'}
               </div>
             </div>
-          `;
-        }
-      } catch (error) {
-        resultDiv.innerHTML = `<div class="text-red-600"><p>❌ ${error.message}</p></div>`;
-      }
-    }
+            
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm opacity-90">可动资产</div>
+                <TrendingUp size={24} />
+              </div>
+              <div className="text-3xl font-bold">
+                {showValues ? `RM ${calculateLiquidAssets().toLocaleString('en-MY', {minimumFractionDigits: 2})}` : '****'}
+              </div>
+              <div className="text-xs mt-2 opacity-80">
+                {((calculateLiquidAssets() / calculateTotalAssets()) * 100).toFixed(1)}% 总资产
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm opacity-90">不可动资产</div>
+                <FileText size={24} />
+              </div>
+              <div className="text-3xl font-bold">
+                {showValues ? `RM ${calculateIlliquidAssets().toLocaleString('en-MY', {minimumFractionDigits: 2})}` : '****'}
+              </div>
+              <div className="text-xs mt-2 opacity-80">
+                {((calculateIlliquidAssets() / calculateTotalAssets()) * 100).toFixed(1)}% 总资产
+              </div>
+            </div>
+          </div>
+
+          {/* 图表 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="text-xl font-bold mb-4 text-gray-800">资产分布</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={assetDistributionData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {assetDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `RM ${value.toLocaleString('en-MY', {minimumFractionDigits: 2})}`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="text-xl font-bold mb-4 text-gray-800">资产类别分布</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={categoryDistributionData.filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {categoryDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `RM ${value.toLocaleString('en-MY', {minimumFractionDigits: 2})}`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 资产列表 */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800">可动资产明细</h3>
+              <button
+                onClick={() => setShowAddAsset(true)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+              >
+                <PlusCircle size={18} /> 添加资产
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">名称</th>
+                    <th className="text-left py-3 px-4">类别</th>
+                    <th className="text-right py-3 px-4">金额</th>
+                    <th className="text-left py-3 px-4">备注</th>
+                    <th className="text-center py-3 px-4">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assets.liquid.map(asset => (
+                    <tr key={asset.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">{asset.name}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          asset.category === 'cash' ? 'bg-blue-100 text-blue-800' :
+                          asset.category === 'stocks' ? 'bg-green-100 text-green-800' :
+                          asset.category === 'gold' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {asset.category}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right font-semibold">
+                        {showValues ? `RM ${asset.value.toLocaleString('en-MY', {minimumFractionDigits: 2})}` : '****'}
+                      </td>
+                      <td className="py-3 px-4 text-gray-600 text-sm">{asset.notes || '-'}</td>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => setEditingAsset({ ...asset, type: 'liquid' })}
+                          className="text-blue-500 hover:text-blue-700 mr-2"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() => deleteAsset(asset.id, 'liquid')}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 不可动资产 */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-xl font-bold mb-4 text-gray-800">不可动资产明细</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">名称</th>
+                    <th className="text-right py-3 px-4">金额</th>
+                    <th className="text-left py-3 px-4">备注</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assets.illiquid.map(asset => (
+                    <tr key={asset.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">{asset.name}</td>
+                      <td className="py-3 px-4 text-right font-semibold">
+                        {showValues ? `RM ${asset.value.toLocaleString('en-MY', {minimumFractionDigits: 2})}` : '****'}
+                      </td>
+                      <td className="py-3 px-4 text-gray-600 text-sm">{asset.notes || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+
+      const renderStocks = () => (
+        <div className="space-y-6">
+          {/* 美股 */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800">🇺🇸 美国股票</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={updateAllStockPrices}
+                  disabled={loading}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 flex items-center gap-2"
+                >
+                  <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                  更新价格
+                </button>
+                <button
+                  onClick={() => setShowAddStock(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+                >
+                  <PlusCircle size={18} /> 添加股票
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">代码</th>
+                    <th className="text-left py-3 px-4">名称</th>
+                    <th className="text-right py-3 px-4">股数</th>
+                    <th className="text-right py-3 px-4">平均成本</th>
+                    <th className="text-right py-3 px-4">当前价</th>
+                    <th className="text-right py-3 px-4">成本总额</th>
+                    <th className="text-right py-3 px-4">市值</th>
+                    <th className="text-right py-3 px-4">损益</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assets.stocks.us.map((stock, idx) => {
+                    const totalCost = stock.shares * stock.avgPrice;
+                    const marketValue = stock.shares * (stock.currentPrice || stock.avgPrice);
+                    const pl = marketValue - totalCost;
+                    const plPercent = (pl / totalCost) * 100;
+                    
+                    return (
+                      <tr key={idx} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 font-semibold">{stock.symbol}</td>
+                        <td className="py-3 px-4">{stock.name}</td>
+                        <td className="py-3 px-4 text-right">{stock.shares}</td>
+                        <td className="py-3 px-4 text-right">${stock.avgPrice.toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right">${(stock.currentPrice || stock.avgPrice).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right">${totalCost.toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right font-semibold">${marketValue.toFixed(2)}</td>
+                        <td className={`py-3 px-4 text-right font-semibold ${pl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          ${pl.toFixed(2)} ({plPercent.toFixed(2)}%)
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 马股 */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800">🇲🇾 马来西亚股票</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">代码</th>
+                    <th className="text-left py-3 px-4">名称</th>
+                    <th className="text-right py-3 px-4">股数</th>
+                    <th className="text-right py-3 px-4">平均成本</th>
+                    <th className="text-right py-3 px-4">当前价</th>
+                    <th className="text-right py-3 px-4">成本总额</th>
+                    <th className="text-right py-3 px-4">市值</th>
+                    <th className="text-right py-3 px-4">损益</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assets.stocks.malaysia.map((stock, idx) => {
+                    const totalCost = stock.shares * stock.avgPrice;
+                    const marketValue = stock.shares * (stock.currentPrice || stock.avgPrice);
+                    const pl = marketValue - totalCost;
+                    const plPercent = (pl / totalCost) * 100;
+                    
+                    return (
+                      <tr key={idx} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 font-semibold">{stock.symbol}</td>
+                        <td className="py-3 px-4">{stock.name}</td>
+                        <td className="py-3 px-4 text-right">{stock.shares}</td>
+                        <td className="py-3 px-4 text-right">RM {stock.avgPrice.toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right">RM {(stock.currentPrice || stock.avgPrice).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right">RM {totalCost.toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right font-semibold">RM {marketValue.toFixed(2)}</td>
+                        <td className={`py-3 px-4 text-right font-semibold ${pl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          RM {pl.toFixed(2)} ({plPercent.toFixed(2)}%)
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+
+      const renderGold = () => (
+        <div className="space-y-6">
+          {/* 金价信息 */}
+          <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg shadow-lg p-6 text-white">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-2xl font-bold mb-2">916金价</h3>
+                {goldPrice.updated && (
+                  <p className="text-sm opacity-90">更新时间: {goldPrice.updated}</p>
+                )}
+              </div>
+              <button
+                onClick={updateGoldPrice}
+                disabled={loading}
+                className="px-4 py-2 bg-white text-yellow-600 rounded-lg hover:bg-gray-100 flex items-center gap-2"
+              >
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                更新金价
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white bg-opacity-20 rounded-lg p-4">
+                <div className="text-sm opacity-90">零售价</div>
+                <div className="text-3xl font-bold">
+                  {goldPrice.retail > 0 ? `RM ${goldPrice.retail.toFixed(2)}` : '未更新'}
+                </div>
+                <div className="text-xs mt-1">每克</div>
+              </div>
+              <div className="bg-white bg-opacity-20 rounded-lg p-4">
+                <div className="text-sm opacity-90">回收价 (93%)</div>
+                <div className="text-3xl font-bold">
+                  {goldPrice.buyback > 0 ? `RM ${goldPrice.buyback.toFixed(2)}` : '未更新'}
+                </div>
+                <div className="text-xs mt-1">每克</div>
+              </div>
+            </div>
+          </div>
+
+          {/* 黄金持仓 */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800">黄金持仓</h3>
+              <button
+                onClick={() => setShowAddGold(true)}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center gap-2"
+              >
+                <PlusCircle size={18} /> 添加黄金
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">名称</th>
+                    <th className="text-right py-3 px-4">重量(克)</th>
+                    <th className="text-right py-3 px-4">购买价</th>
+                    <th className="text-right py-3 px-4">成本</th>
+                    <th className="text-right py-3 px-4">当前价值</th>
+                    <th className="text-right py-3 px-4">损益</th>
+                    <th className="text-left py-3 px-4">备注</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assets.gold.map(item => {
+                    const cost = item.weight * item.buyPrice;
+                    const currentValue = goldPrice.buyback > 0 ? item.weight * goldPrice.buyback : cost;
+                    const pl = currentValue - cost;
+                    const plPercent = (pl / cost) * 100;
+                    
+                    return (
+                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">{item.name}</td>
+                        <td className="py-3 px-4 text-right">{item.weight}</td>
+                        <td className="py-3 px-4 text-right">RM {item.buyPrice.toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right">RM {cost.toFixed(2)}</td>
+                        <td className="py-3 px-4 text-right font-semibold">RM {currentValue.toFixed(2)}</td>
+                        <td className={`py-3 px-4 text-right font-semibold ${pl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          RM {pl.toFixed(2)} ({plPercent.toFixed(2)}%)
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 text-sm">{item.notes || '-'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* 总计 */}
+            {assets.gold.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex justify-between items-center font-bold">
+                  <span>总计:</span>
+                  <div className="text-right">
+                    <div>总重量: {assets.gold.reduce((sum, item) => sum + item.weight, 0).toFixed(2)}克</div>
+                    <div>总成本: RM {assets.gold.reduce((sum, item) => sum + (item.weight * item.buyPrice), 0).toFixed(2)}</div>
+                    {goldPrice.buyback > 0 && (
+                      <div className="text-green-600">
+                        当前价值: RM {assets.gold.reduce((sum, item) => sum + (item.weight * goldPrice.buyback), 0).toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800 mb-2">💰 Smart Asset Management System</h1>
+                  <p className="text-gray-600">多平台资产管理 · 实时行情 · AI分析</p>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setShowValues(!showValues)}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center gap-2"
+                    title={showValues ? '隐藏金额' : '显示金额'}
+                  >
+                    {showValues ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                  <button
+                    onClick={exportData}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+                  >
+                    <Download size={20} /> 导出
+                  </button>
+                  <label className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2 cursor-pointer">
+                    <Upload size={20} /> 导入
+                    <input type="file" accept=".json" onChange={importData} className="hidden" />
+                  </label>
+                  <label className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 flex items-center gap-2 cursor-pointer">
+                    <FileText size={20} /> 账单
+                    <input type="file" accept=".xlsx,.xls,.csv,.pdf" onChange={handleStatementUpload} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              {/* API配置 */}
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                <label className="block mb-2 text-sm font-semibold text-gray-700">API服务器地址:</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={apiUrl}
+                    onChange={(e) => setApiUrl(e.target.value)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://your-app.onrender.com"
+                  />
+                  <button
+                    onClick={getForexRate}
+                    className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                  >
+                    获取汇率
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-600">
+                  💡 配置API服务器后可获取实时股价、金价和汇率 | 当前汇率: 1 USD = {forexRate.toFixed(4)} MYR
+                </p>
+              </div>
+
+              {/* 导航 */}
+              <div className="flex gap-2 overflow-x-auto">
+                {['overview', 'stocks', 'gold'].map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setView(tab)}
+                    className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+                      view === tab
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {tab === 'overview' && '📊 总览'}
+                    {tab === 'stocks' && '📈 股票'}
+                    {tab === 'gold' && '💎 黄金'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 内容区域 */}
+            {view === 'overview' && renderOverview()}
+            {view === 'stocks' && renderStocks()}
+            {view === 'gold' && renderGold()}
+
+            {/* 添加资产对话框 */}
+            {showAddAsset && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                  <h3 className="text-xl font-bold mb-4">添加资产</h3>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    addAsset({
+                      name: formData.get('name'),
+                      value: formData.get('value'),
+                      category: formData.get('category'),
+                      notes: formData.get('notes'),
+                      type: formData.get('type')
+                    });
+                  }}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">名称</label>
+                        <input name="name" type="text" required className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">金额</label>
+                        <input name="value" type="number" step="0.01" required className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">类别</label>
+                        <select name="category" required className="w-full px-3 py-2 border rounded-lg">
+                          <option value="cash">现金</option>
+                          <option value="stocks">股票</option>
+                          <option value="gold">黄金</option>
+                          <option value="investment">投资</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">类型</label>
+                        <select name="type" required className="w-full px-3 py-2 border rounded-lg">
+                          <option value="liquid">可动资产</option>
+                          <option value="illiquid">不可动资产</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">备注</label>
+                        <input name="notes" type="text" className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-6">
+                      <button type="submit" className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        添加
+                      </button>
+                      <button type="button" onClick={() => setShowAddAsset(false)} className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        取消
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* 添加股票对话框 */}
+            {showAddStock && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                  <h3 className="text-xl font-bold mb-4">添加股票</h3>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    addStock({
+                      symbol: formData.get('symbol'),
+                      name: formData.get('name'),
+                      shares: formData.get('shares'),
+                      avgPrice: formData.get('avgPrice'),
+                      exchange: formData.get('exchange')
+                    });
+                  }}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">股票代码</label>
+                        <input name="symbol" type="text" required className="w-full px-3 py-2 border rounded-lg" placeholder="VOO, AAPL" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">股票名称</label>
+                        <input name="name" type="text" required className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">持有股数</label>
+                        <input name="shares" type="number" step="0.01" required className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">平均成本</label>
+                        <input name="avgPrice" type="number" step="0.01" required className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">市场</label>
+                        <select name="exchange" required className="w-full px-3 py-2 border rounded-lg">
+                          <option value="US">美国 (US)</option>
+                          <option value="MY">马来西亚 (MY)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-6">
+                      <button type="submit" className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        添加
+                      </button>
+                      <button type="button" onClick={() => setShowAddStock(false)} className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        取消
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* 添加黄金对话框 */}
+            {showAddGold && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                  <h3 className="text-xl font-bold mb-4">添加黄金</h3>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    addGold({
+                      name: formData.get('name'),
+                      weight: formData.get('weight'),
+                      buyPrice: formData.get('buyPrice'),
+                      notes: formData.get('notes')
+                    });
+                  }}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">名称</label>
+                        <input name="name" type="text" required className="w-full px-3 py-2 border rounded-lg" placeholder="916金项链" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">重量(克)</label>
+                        <input name="weight" type="number" step="0.01" required className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">购买价(每克)</label>
+                        <input name="buyPrice" type="number" step="0.01" required className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">备注</label>
+                        <input name="notes" type="text" className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-6">
+                      <button type="submit" className="flex-1 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                        添加
+                      </button>
+                      <button type="button" onClick={() => setShowAddGold(false)} className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        取消
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="mt-8 text-center text-gray-600 text-sm space-y-2">
+              <p className="flex items-center justify-center gap-2">
+                <span>💡</span>
+                <span>数据保存在浏览器本地，请定期导出备份</span>
+              </p>
+              <p className="flex items-center justify-center gap-2">
+                <span>🔒</span>
+                <span>所有数据仅存储在您的设备上，完全私密安全</span>
+              </p>
+              <p className="flex items-center justify-center gap-2">
+                <span>📱</span>
+                <span>支持多平台：MOOMOO, Webull, 通用券商账单</span>
+              </p>
+              <p className="mt-4 text-xs text-gray-500">
+                Smart Asset Management System v1.0 | Created with ❤️
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<SmartAssetManager />, document.getElementById('root'));
   </script>
 </body>
 </html>
