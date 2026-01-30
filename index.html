@@ -23,37 +23,35 @@
       <div id="conn-status" class="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-400">未连接 API</div>
     </header>
 
-    <nav class="flex bg-white rounded-xl shadow-sm mb-6 overflow-x-auto sticky top-4 z-50 p-1 gap-1">
-      <button onclick="showTab('overview')" id="btn-overview" class="nav-tab active flex-1 py-3 px-4 font-bold rounded-lg transition-all">📊 概览</button>
-      <button onclick="showTab('stocks')" id="btn-stocks" class="nav-tab flex-1 py-3 px-4 font-bold rounded-lg transition-all text-slate-500">📈 股票</button>
-      <button onclick="showTab('gold')" id="btn-gold" class="nav-tab flex-1 py-3 px-4 font-bold rounded-lg transition-all text-slate-500">💰 黄金</button>
-      <button onclick="showTab('cashflow')" id="btn-cashflow" class="nav-tab flex-1 py-3 px-4 font-bold rounded-lg transition-all text-slate-500">💸 现金流</button>
-      <button onclick="showTab('ai')" id="btn-ai" class="nav-tab flex-1 py-3 px-4 font-bold rounded-lg transition-all text-slate-500">🤖 AI识别</button>
+    <nav class="grid grid-cols-5 bg-white shadow-sm p-1 rounded-xl sticky top-4 z-50 mb-6 border border-slate-200">
+        <button onclick="showTab('overview')" id="btn-overview" class="nav-tab active py-3 text-xs font-bold rounded-lg transition-all">概览</button>
+        <button onclick="showTab('stocks')" id="btn-stocks" class="nav-tab py-3 text-xs font-bold rounded-lg transition-all text-slate-500">股票</button>
+        <button onclick="showTab('gold')" id="btn-gold" class="nav-tab py-3 text-xs font-bold rounded-lg transition-all text-slate-500">黄金</button>
+        <button onclick="showTab('cash')" id="btn-cash" class="nav-tab py-3 text-xs font-bold rounded-lg transition-all text-slate-500">现金流</button>
+        <button onclick="showTab('ai')" id="btn-ai" class="nav-tab py-3 text-xs font-bold rounded-lg transition-all text-blue-600">AI识别</button>
     </nav>
 
     <section id="tab-overview" class="tab-content active space-y-4">
+      <div class="bg-indigo-600 text-white p-6 rounded-2xl shadow-lg">
+        <p class="text-xs opacity-80 uppercase font-bold mb-1">AI 财务总顾问建议</p>
+        <div id="ai-advice-box" class="text-sm italic leading-relaxed">
+          点击下方的 AI 识别页上传账单，我将为你生成全盘资产配置建议...
+        </div>
+        <button onclick="getAiAdvice()" class="mt-4 text-[10px] bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full border border-white/30 transition-all">刷新 AI 建议</button>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-2xl text-white shadow-lg">
+        <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-2xl text-white shadow-md">
           <p class="text-blue-100 text-xs uppercase font-bold">总资产估值 (MYR)</p>
           <h2 id="total-val" class="text-3xl font-black mt-1">RM 0.00</h2>
         </div>
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <p class="text-slate-400 text-xs uppercase font-bold">累计盈亏 (Profit)</p>
-          <h2 id="total-profit" class="text-3xl font-black text-green-600 mt-1">+RM 0.00</h2>
+          <p class="text-slate-400 text-xs uppercase font-bold">现金余额 (Cash)</p>
+          <h2 id="cash-balance-display" class="text-3xl font-black text-slate-700 mt-1">RM 0.00</h2>
         </div>
       </div>
 
-      <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
-        <div class="flex justify-between items-center mb-2">
-          <h3 class="font-bold text-indigo-800 flex items-center gap-2">✨ AI 财务深度总结</h3>
-          <button onclick="generateAISummary()" class="text-xs bg-indigo-600 text-white px-3 py-1 rounded-full hover:bg-indigo-700">重新生成</button>
-        </div>
-        <div id="ai-summary-text" class="text-sm text-indigo-700 leading-relaxed italic">
-          点击按钮，AI 将根据你目前的持仓、金价和现金流给出专业投资建议...
-        </div>
-      </div>
-
-      <div class="bg-white p-4 rounded-2xl shadow-sm h-72">
+      <div class="bg-white p-4 rounded-2xl shadow-sm h-80 border border-slate-100">
         <canvas id="chart-main"></canvas>
       </div>
     </section>
@@ -62,75 +60,75 @@
       <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-dashed border-slate-200">
         <h4 class="text-sm font-bold mb-3 text-slate-600">✍️ 手动录入持仓</h4>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <input type="text" id="add-stock-symbol" placeholder="代码(如:TSLA)" class="p-2 border rounded-lg text-sm">
+          <input type="text" id="add-stock-symbol" placeholder="代码(如:TSLA)" class="p-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
           <input type="number" id="add-stock-shares" placeholder="股数" class="p-2 border rounded-lg text-sm">
           <input type="number" id="add-stock-price" placeholder="成本价" class="p-2 border rounded-lg text-sm">
-          <select id="add-stock-market" class="p-2 border rounded-lg text-sm">
+          <select id="add-stock-market" class="p-2 border rounded-lg text-sm bg-slate-50">
             <option value="my">马股(RM)</option>
             <option value="us">美股($)</option>
           </select>
-          <button onclick="manualAddStock()" class="md:col-span-4 bg-slate-800 text-white p-2 rounded-lg font-bold text-sm">确认添加</button>
+          <button onclick="manualAddStock()" class="md:col-span-4 bg-slate-800 text-white py-2.5 rounded-lg font-bold text-sm hover:bg-slate-700">确认添加持仓</button>
         </div>
       </div>
-
-      <div id="stock-container" class="space-y-4">
-        </div>
+      <div id="stock-container" class="space-y-4"></div>
     </section>
 
     <section id="tab-gold" class="tab-content space-y-4">
-      <div class="bg-white p-6 rounded-2xl shadow-sm">
-        <h3 class="font-bold text-yellow-700 mb-4">✍️ 黄金实物手写录入</h3>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <h3 class="font-bold text-yellow-700 mb-4 flex items-center gap-2">💰 实物黄金持仓 (手写录入)</h3>
         <div class="space-y-4">
-          <div class="flex items-center gap-4 bg-yellow-50 p-4 rounded-xl">
+          <div class="flex items-center gap-4 bg-yellow-50 p-4 rounded-xl border border-yellow-100">
             <div class="flex-1">
-              <p class="text-xs font-bold text-yellow-800">999 纯金 (克)</p>
-              <input type="number" id="g999-weight" oninput="updateGoldValues()" class="w-full bg-transparent text-xl font-black outline-none" value="0">
+              <p class="text-xs font-bold text-yellow-800">999 纯金 (克/g)</p>
+              <input type="number" id="g999-weight" oninput="updateGoldValues()" class="w-full bg-transparent text-2xl font-black outline-none text-yellow-900" value="0">
             </div>
             <div class="text-right">
-              <p class="text-[10px] text-slate-400">估值</p>
-              <p id="g999-val" class="font-bold">RM 0.00</p>
+              <p class="text-[10px] text-slate-400 uppercase">当前估值</p>
+              <p id="g999-val" class="font-bold text-yellow-700">RM 0.00</p>
             </div>
           </div>
-          <div class="flex items-center gap-4 bg-orange-50 p-4 rounded-xl">
+          <div class="flex items-center gap-4 bg-orange-50 p-4 rounded-xl border border-orange-100">
             <div class="flex-1">
-              <p class="text-xs font-bold text-orange-800">916 饰金 (克)</p>
-              <input type="number" id="g916-weight" oninput="updateGoldValues()" class="w-full bg-transparent text-xl font-black outline-none" value="0">
+              <p class="text-xs font-bold text-orange-800">916 饰金 (克/g)</p>
+              <input type="number" id="g916-weight" oninput="updateGoldValues()" class="w-full bg-transparent text-2xl font-black outline-none text-orange-900" value="0">
             </div>
             <div class="text-right">
-              <p class="text-[10px] text-slate-400">估值</p>
-              <p id="g916-val" class="font-bold">RM 0.00</p>
+              <p class="text-[10px] text-slate-400 uppercase">当前估值</p>
+              <p id="g916-val" class="font-bold text-orange-700">RM 0.00</p>
             </div>
           </div>
         </div>
-        <p class="text-[10px] text-slate-400 mt-4 text-center">* 金价每15分钟自动抓取自 BuySilverMalaysia</p>
+        <p class="text-[10px] text-slate-400 mt-6 text-center italic">* 金价数据由 BuySilverMalaysia 实时提供 (93% 回收参考价)</p>
       </div>
     </section>
 
-    <section id="tab-cashflow" class="tab-content space-y-4">
-      <div class="bg-white p-4 rounded-2xl shadow-sm">
-        <h3 class="font-bold mb-4">💸 现金往来记录</h3>
-        <div class="grid grid-cols-2 gap-2 mb-4">
-          <input type="text" id="cf-desc" placeholder="描述 (如:薪水)" class="p-2 border rounded-lg text-sm">
-          <input type="number" id="cf-amount" placeholder="金额 (正进负出)" class="p-2 border rounded-lg text-sm">
-          <button onclick="addCashFlow()" class="col-span-2 bg-green-600 text-white p-2 rounded-lg font-bold">添加记录</button>
+    <section id="tab-cash" class="tab-content space-y-4">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <h3 class="font-bold mb-4 flex items-center gap-2">💸 现金往来流水</h3>
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <input id="cf-desc" placeholder="流水项目 (如:薪水)" class="border p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500">
+                <input id="cf-amt" type="number" placeholder="金额 (+/-)" class="border p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500">
+                <button onclick="addCashFlow()" class="col-span-2 bg-green-600 text-white py-2.5 rounded-lg font-bold hover:bg-green-700 transition-colors">添加现金记录</button>
+            </div>
+            <div id="cash-list" class="divide-y border-t mt-4"></div>
         </div>
-        <div class="divide-y" id="cashflow-list">
-          </div>
-      </div>
     </section>
 
     <section id="tab-ai" class="tab-content space-y-4">
       <div class="bg-gradient-to-br from-purple-600 to-indigo-700 p-6 rounded-2xl text-white shadow-lg">
-        <h3 class="text-xl font-bold mb-2">📸 AI 智能拍照/文件读取</h3>
-        <p class="text-indigo-100 text-xs mb-4">支持 PDF 电子账单、Excel 报表、甚至是账单照片（JPG/PNG）。AI 会自动分辨马股和美股。</p>
-        <input type="file" id="ai-file" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg" class="block w-full text-xs text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-white file:text-purple-700 hover:file:bg-purple-50">
-        <button id="ai-btn" onclick="runAiParser()" class="w-full mt-4 py-3 bg-white text-purple-700 font-bold rounded-xl">开始 AI 深度解析</button>
+        <h3 class="text-xl font-bold mb-2 flex items-center gap-2">📸 AI 智能解析账单</h3>
+        <p class="text-indigo-100 text-xs mb-4">上传 PDF 电子账单、美股结单或纸质账单照片。AI 会自动叠加到当前资产中。</p>
+        <div class="bg-white/10 p-4 rounded-xl border border-white/20 mb-4">
+            <input type="file" id="ai-file" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg" class="block w-full text-xs text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-white file:text-purple-700 hover:file:bg-purple-50">
+        </div>
+        <button id="ai-btn" onclick="runAiParser()" class="w-full py-3 bg-white text-purple-700 font-bold rounded-xl shadow-lg hover:bg-indigo-50 active:scale-[0.98] transition-all">开始 AI 深度解析并同步</button>
       </div>
 
-      <div class="bg-white p-4 rounded-2xl shadow-sm">
-        <h4 class="text-xs font-bold text-slate-400 mb-2">API 节点配置</h4>
-        <input type="text" id="api-url" class="w-full p-2 text-sm border rounded-lg" placeholder="https://your-app.onrender.com">
-        <button onclick="initConnection()" class="w-full mt-2 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">保存并刷新金价</button>
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">后端 API 节点配置</h4>
+        <input type="text" id="api-url" class="w-full p-3 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://your-app.onrender.com">
+        <button onclick="initConnection()" class="w-full mt-2 py-2.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all">保存配置并连接</button>
+        <button onclick="clearAllData()" class="w-full mt-2 py-2 bg-red-50 text-red-400 rounded-lg text-[10px]">危险：清空本地所有数据</button>
       </div>
     </section>
   </div>
@@ -139,23 +137,23 @@
     // --- 核心数据结构 ---
     let db = {
       portfolio: {
-        stocks_my: [], // {symbol, shares, avgPrice}
+        stocks_my: [], 
         stocks_us: [],
         cash_balance: 0,
         gold_999_w: 0,
         gold_916_w: 0
       },
-      cashflow: [], // {desc, amount, date}
+      cashflow: [], 
       market: {
         g999: 0, g916: 0, 
-        prices: {}, // symbol: price
+        prices: {}, 
         rate: 4.72 
       }
     };
 
     let charts = {};
 
-    // --- 初始化 ---
+    // --- 初始化加载 ---
     window.onload = () => {
       const saved = localStorage.getItem('ai_assets_db');
       if (saved) db = JSON.parse(saved);
@@ -163,7 +161,7 @@
       const savedUrl = localStorage.getItem('apiUrl');
       if (savedUrl) document.getElementById('api-url').value = savedUrl;
 
-      // 绑定输入框初始值
+      // 恢复输入框值
       document.getElementById('g999-weight').value = db.portfolio.gold_999_w;
       document.getElementById('g916-weight').value = db.portfolio.gold_916_w;
 
@@ -175,14 +173,21 @@
       localStorage.setItem('ai_assets_db', JSON.stringify(db));
     }
 
-    // --- 导航 ---
+    function clearAllData() {
+        if(confirm("确定要清空所有数据吗？此操作不可撤销。")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    // --- 导航逻辑 ---
     function showTab(id) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-tab').forEach(el => {
         el.classList.remove('active');
         el.classList.add('text-slate-500');
       });
-      document.getElementById('tab-' + id).classList.add('active');
+      document.getElementById('tab-' + (id === 'cash' ? 'cash' : id)).classList.add('active');
       document.getElementById('btn-' + id).classList.add('active');
       document.getElementById('btn-' + id).classList.remove('text-slate-500');
       if(id === 'overview') refreshCharts();
@@ -199,51 +204,86 @@
         const data = await res.json();
         if (data.success) {
           db.market.g999 = data.data.gold_999;
-          db.market.g916 = data.data.gold_916_buyback_93;
+          db.market.g916 = data.data.gold_916_buyback; // 使用后端返回的 916 回收价
           document.getElementById('conn-status').innerText = "API 已连接";
-          document.getElementById('conn-status').className = "text-xs px-3 py-1 rounded-full bg-green-100 text-green-600";
+          document.getElementById('conn-status').className = "text-xs px-3 py-1 rounded-full bg-green-100 text-green-600 font-bold";
           refreshAll();
+          fetchStockPrices();
         }
-      } catch (e) { console.error("连接失败"); }
+      } catch (e) { 
+          console.error("连接失败"); 
+          document.getElementById('conn-status').innerText = "连接失败";
+          document.getElementById('conn-status').className = "text-xs px-3 py-1 rounded-full bg-red-100 text-red-500 font-bold";
+      }
     }
 
     async function runAiParser() {
-      const url = localStorage.getItem('apiUrl');
-      const fileInput = document.getElementById('ai-file');
-      if (!fileInput.files[0]) return alert("请先选择文件或相片");
+        const fileInput = document.getElementById('ai-file');
+        const btn = document.getElementById('ai-btn');
+        const apiUrl = localStorage.getItem('apiUrl');
 
-      const btn = document.getElementById('ai-btn');
-      btn.innerText = "⏳ AI 正在深度阅读解析中...";
-      btn.disabled = true;
+        if(!fileInput.files[0]) return alert("请先选个图或者PDF再点我");
+        if(!apiUrl) return alert("请先在下方配置 API 节点地址");
 
-      const fd = new FormData();
-      fd.append('file', fileInput.files[0]);
+        btn.innerText = "🚀 AI 正在深度读取解析...";
+        btn.disabled = true;
 
-      try {
-        const res = await fetch(`${url}/api/parse-statement-ai`, { method: 'POST', body: fd });
-        const result = await res.json();
-        
-        if (result.success) {
-          // 核心修复：确保数据正确写入 db 对象
-          const raw = result.data;
-          db.portfolio.stocks_my = raw.stocks_my || [];
-          db.portfolio.stocks_us = raw.stocks_us || [];
-          db.portfolio.cash_balance = raw.cash_balance || 0;
-          
-          alert("AI 识别成功！已自动更新持仓。");
-          save();
-          refreshAll();
-          showTab('stocks');
-          // 尝试更新股价
-          fetchStockPrices();
-        } else {
-          alert("AI 识别失败: " + result.error);
+        const fd = new FormData();
+        fd.append('file', fileInput.files[0]);
+
+        try {
+            const res = await fetch(`${apiUrl}/api/parse-statement-ai`, {
+                method: 'POST',
+                body: fd
+            });
+            const result = await res.json();
+            
+            if(result.success) {
+                // 数据合并策略：将识别出的数据追加到现有数据库
+                const newData = result.data;
+                if(newData.stocks_my) db.portfolio.stocks_my = [...db.portfolio.stocks_my, ...newData.stocks_my];
+                if(newData.stocks_us) db.portfolio.stocks_us = [...db.portfolio.stocks_us, ...newData.stocks_us];
+                if(newData.cash_balance) db.portfolio.cash_balance += newData.cash_balance;
+                
+                save();
+                refreshAll();
+                alert("AI 识别成功！数据已实时同步并叠加。");
+                
+                // 自动触发 AI 财务建议
+                getAiAdvice();
+            } else {
+                alert("AI 识别失败: " + result.error);
+            }
+        } catch(e) { 
+            alert("网络错误，请检查 API 地址是否正确或服务器是否启动。"); 
+        } finally { 
+            btn.innerText = "开始 AI 深度解析并同步"; 
+            btn.disabled = false; 
         }
-      } catch (e) { alert("网络错误: " + e.message); }
-      finally {
-        btn.innerText = "开始 AI 深度解析";
-        btn.disabled = false;
-      }
+    }
+
+    async function getAiAdvice() {
+        const adviceBox = document.getElementById('ai-advice-box');
+        const apiUrl = localStorage.getItem('apiUrl');
+        
+        adviceBox.innerText = "正在分析全盘资产配置、市场波动与现金流健康度...";
+        
+        try {
+            // 这里假设后端有一个 /api/ai-advisor 接口，如果没有，可以用提示词逻辑替代
+            const res = await fetch(`${apiUrl}/api/ai-advisor`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(db)
+            });
+            const data = await res.json();
+            adviceBox.innerText = data.advice || "数据不足，无法生成建议。";
+        } catch(e) {
+            // 前端备用模拟建议
+            setTimeout(() => {
+                const total = parseFloat(document.getElementById('total-val').innerText.replace('RM ', '').replace(/,/g, ''));
+                adviceBox.innerText = `[本地建议] 资产已更新。目前您的总资产为 RM${total.toFixed(2)}。建议继续保持分散投资，并关注黄金的回调买入机会。`;
+            }, 1500);
+        }
     }
 
     async function fetchStockPrices() {
@@ -265,21 +305,6 @@
       } catch (e) { console.log("股价更新跳过"); }
     }
 
-    // --- AI 财务总结 ---
-    async function generateAISummary() {
-        const summaryEl = document.getElementById('ai-summary-text');
-        summaryEl.innerText = "正在分析全盘资产配置、市场波动与现金流健康度...";
-        
-        // 模拟 AI 处理时间 (由于后端需要 LLM 接口，这里展示前端生成逻辑，你也可以调用后端)
-        setTimeout(() => {
-            const total = parseFloat(document.getElementById('total-val').innerText.replace('RM ', ''));
-            const msg = `分析完成：您的资产目前以${db.portfolio.stocks_us.length > 0 ? '美股' : '实物黄金'}为主导。
-            建议：当前马币汇率波动，建议增加${db.market.g916 > 300 ? '黄金回收' : '低吸马股蓝筹'}。
-            现金流警示：上月支出较多，建议保留至少3个月的流动资产。`;
-            summaryEl.innerText = msg;
-        }, 2000);
-    }
-
     // --- 业务逻辑 ---
     function manualAddStock() {
       const s = document.getElementById('add-stock-symbol').value.toUpperCase();
@@ -287,25 +312,27 @@
       const p = parseFloat(document.getElementById('add-stock-price').value);
       const m = document.getElementById('add-stock-market').value;
 
-      if(!s || !n) return;
+      if(!s || isNaN(n)) return alert("请输入完整信息");
       const target = m === 'my' ? db.portfolio.stocks_my : db.portfolio.stocks_us;
-      target.push({ symbol: s, shares: n, avgPrice: p });
+      target.push({ symbol: s, shares: n, avgPrice: p || 0 });
       save();
       refreshAll();
-      alert("添加成功");
+      document.getElementById('add-stock-symbol').value = '';
+      document.getElementById('add-stock-shares').value = '';
     }
 
     function addCashFlow() {
-      const desc = document.getElementById('cf-desc').value;
-      const amt = parseFloat(document.getElementById('cf-amount').value);
-      if(!desc || !amt) return;
-      
-      db.cashflow.unshift({ desc, amount: amt, date: new Date().toLocaleDateString() });
-      db.portfolio.cash_balance += amt;
-      save();
-      refreshAll();
-      document.getElementById('cf-desc').value = '';
-      document.getElementById('cf-amount').value = '';
+        const desc = document.getElementById('cf-desc').value;
+        const amt = parseFloat(document.getElementById('cf-amt').value);
+        if(!desc || isNaN(amt)) return alert("请输入流水项目和金额");
+        
+        db.cashflow.unshift({desc, amount: amt, date: new Date().toLocaleDateString()});
+        db.portfolio.cash_balance += amt;
+        save();
+        refreshAll();
+        
+        document.getElementById('cf-desc').value = '';
+        document.getElementById('cf-amt').value = '';
     }
 
     function updateGoldValues() {
@@ -315,7 +342,7 @@
       refreshAll();
     }
 
-    // --- 渲染引擎 ---
+    // --- 页面渲染 ---
     function refreshAll() {
       // 1. 黄金计算
       const v999 = db.portfolio.gold_999_w * db.market.g999;
@@ -323,40 +350,33 @@
       document.getElementById('g999-val').innerText = `RM ${v999.toFixed(2)}`;
       document.getElementById('g916-val').innerText = `RM ${v916.toFixed(2)}`;
 
-      // 2. 股票列表
-      renderStockSection();
-
-      // 3. 现金流列表
-      const cfContainer = document.getElementById('cashflow-list');
-      cfContainer.innerHTML = db.cashflow.map(i => `
-        <div class="flex justify-between py-2 text-sm">
-          <span>${i.date} - ${i.desc}</span>
+      // 2. 现金列表渲染
+      const cashListEl = document.getElementById('cash-list');
+      cashListEl.innerHTML = db.cashflow.map(i => `
+        <div class="flex justify-between py-3 text-sm items-center">
+          <span class="text-slate-500 text-xs">${i.date} <span class="text-slate-800 font-medium ml-2">${i.desc}</span></span>
           <span class="font-bold ${i.amount >= 0 ? 'text-green-600' : 'text-red-600'}">${i.amount >= 0 ? '+' : ''}${i.amount.toFixed(2)}</span>
         </div>
-      `).join('') || '<p class="text-xs text-slate-400 py-4">尚无记录</p>';
+      `).join('') || '<p class="text-xs text-slate-400 py-6 text-center">尚无流水记录</p>';
 
-      // 4. 总资产计算
+      // 3. 股票渲染
+      renderStockSection();
+
+      // 4. 总资产计算逻辑
       let stockValueMYR = 0;
-      let stockCostMYR = 0;
-
       db.portfolio.stocks_my.forEach(s => {
         const cur = db.market.prices[s.symbol] || s.avgPrice;
         stockValueMYR += (cur * s.shares);
-        stockCostMYR += (s.avgPrice * s.shares);
       });
       db.portfolio.stocks_us.forEach(s => {
         const cur = db.market.prices[s.symbol] || s.avgPrice;
         stockValueMYR += (cur * s.shares * db.market.rate);
-        stockCostMYR += (s.avgPrice * s.shares * db.market.rate);
       });
 
       const totalValue = stockValueMYR + v999 + v916 + db.portfolio.cash_balance;
-      const totalProfit = totalValue - (stockCostMYR + v999 + v916 + 0); // 简化逻辑
-
+      
       document.getElementById('total-val').innerText = `RM ${totalValue.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-      const pEl = document.getElementById('total-profit');
-      pEl.innerText = `${totalProfit >= 0 ? '+' : ''}RM ${totalProfit.toFixed(2)}`;
-      pEl.className = `text-3xl font-black mt-1 ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`;
+      document.getElementById('cash-balance-display').innerText = `RM ${db.portfolio.cash_balance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
 
       refreshCharts(stockValueMYR, v999 + v916, db.portfolio.cash_balance);
     }
@@ -364,15 +384,13 @@
     function renderStockSection() {
       const container = document.getElementById('stock-container');
       container.innerHTML = `
-        <div class="bg-white rounded-xl shadow-sm p-4">
-          <h4 class="font-bold text-blue-600 border-b pb-2 mb-2 flex justify-between">
-            <span>🇲🇾 马股总计</span>
-          </h4>
-          ${db.portfolio.stocks_my.map(s => renderItem(s, 'RM')).join('')}
+        <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-100">
+          <h4 class="font-bold text-blue-600 border-b pb-2 mb-3 flex items-center gap-2">🇲🇾 马股持仓</h4>
+          ${db.portfolio.stocks_my.map(s => renderItem(s, 'RM')).join('') || '<p class="text-xs text-slate-400">暂无马股数据</p>'}
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-4">
-          <h4 class="font-bold text-indigo-600 border-b pb-2 mb-2">🇺🇸 美股总计</h4>
-          ${db.portfolio.stocks_us.map(s => renderItem(s, '$')).join('')}
+        <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-100">
+          <h4 class="font-bold text-indigo-600 border-b pb-2 mb-3 flex items-center gap-2">🇺🇸 美股持仓</h4>
+          ${db.portfolio.stocks_us.map(s => renderItem(s, '$')).join('') || '<p class="text-xs text-slate-400">暂无美股数据</p>'}
         </div>
       `;
     }
@@ -381,14 +399,14 @@
       const marketPrice = db.market.prices[s.symbol] || s.avgPrice;
       const profit = (marketPrice - s.avgPrice) * s.shares;
       return `
-        <div class="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+        <div class="flex justify-between items-center py-2.5 border-b border-slate-50 last:border-0">
           <div>
-            <p class="font-bold">${s.symbol}</p>
-            <p class="text-[10px] text-slate-400">${s.shares} 股 @ 成本 ${cur}${s.avgPrice}</p>
+            <p class="font-bold text-slate-800">${s.symbol}</p>
+            <p class="text-[10px] text-slate-400 uppercase">${s.shares} 股 @ 成本 ${cur}${s.avgPrice.toFixed(2)}</p>
           </div>
           <div class="text-right">
-            <p class="font-bold text-sm">${cur}${(marketPrice * s.shares).toFixed(2)}</p>
-            <p class="text-[10px] ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}</p>
+            <p class="font-bold text-sm text-slate-700">${cur}${(marketPrice * s.shares).toFixed(2)}</p>
+            <p class="text-[10px] font-bold ${profit >= 0 ? 'text-green-500' : 'text-red-500'}">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}</p>
           </div>
         </div>
       `;
@@ -397,20 +415,27 @@
     function refreshCharts(sVal, gVal, cVal) {
       const ctx = document.getElementById('chart-main');
       if (charts.main) charts.main.destroy();
+      
+      const hasData = (sVal + gVal + cVal) > 0;
+      
       charts.main = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: ['股票', '黄金', '现金'],
+          labels: ['股票资产', '实物黄金', '现金余额'],
           datasets: [{
-            data: [sVal, gVal, cVal],
-            backgroundColor: ['#3b82f6', '#fbbf24', '#10b981'],
-            borderWidth: 0
+            data: hasData ? [sVal, gVal, cVal] : [0, 0, 1],
+            backgroundColor: hasData ? ['#3b82f6', '#fbbf24', '#10b981'] : ['#f1f5f9', '#f1f5f9', '#f1f5f9'],
+            borderWidth: 0,
+            hoverOffset: 10
           }]
         },
         options: { 
             responsive: true, 
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
+            cutout: '70%',
+            plugins: { 
+                legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+            }
         }
       });
     }
