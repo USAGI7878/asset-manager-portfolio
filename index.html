@@ -2,1338 +2,391 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>💰 Smart Asset Management System</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      padding: 24px;
-      margin-bottom: 20px;
-    }
-    
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    
-    h1 {
-      font-size: 28px;
-      color: #1a202c;
-      margin-bottom: 8px;
-    }
-    
-    h2 {
-      font-size: 20px;
-      color: #2d3748;
-    }
-    
-    .subtitle {
-      color: #718096;
-      font-size: 14px;
-    }
-    
-    .btn-group {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    
-    button, .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .btn-primary {
-      background: #4299e1;
-      color: white;
-    }
-    
-    .btn-primary:hover:not(:disabled) {
-      background: #3182ce;
-    }
-    
-    .btn-success {
-      background: #48bb78;
-      color: white;
-    }
-    
-    .btn-success:hover:not(:disabled) {
-      background: #38a169;
-    }
-    
-    .btn-warning {
-      background: #ed8936;
-      color: white;
-    }
-    
-    .btn-warning:hover:not(:disabled) {
-      background: #dd6b20;
-    }
-    
-    .btn-danger {
-      background: #f56565;
-      color: white;
-    }
-    
-    .btn-secondary {
-      background: #e2e8f0;
-      color: #2d3748;
-    }
-    
-    .btn-secondary:hover:not(:disabled) {
-      background: #cbd5e0;
-    }
-    
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    
-    .stat-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border-radius: 12px;
-      padding: 20px;
-    }
-    
-    .stat-card.green {
-      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-    }
-    
-    .stat-card.purple {
-      background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
-    }
-    
-    .stat-label {
-      font-size: 14px;
-      opacity: 0.9;
-      margin-bottom: 8px;
-    }
-    
-    .stat-value {
-      font-size: 32px;
-      font-weight: bold;
-    }
-    
-    .stat-sub {
-      font-size: 12px;
-      opacity: 0.8;
-      margin-top: 8px;
-    }
-    
-    .input-group {
-      margin-bottom: 16px;
-    }
-    
-    label {
-      display: block;
-      font-size: 14px;
-      font-weight: 600;
-      color: #2d3748;
-      margin-bottom: 8px;
-    }
-    
-    input, select, textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #cbd5e0;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: border-color 0.3s;
-    }
-    
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: #4299e1;
-    }
-    
-    .info-box {
-      background: #ebf8ff;
-      border-left: 4px solid #4299e1;
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-    }
-    
-    .info-box.success {
-      background: #f0fff4;
-      border-color: #48bb78;
-    }
-    
-    .info-box.warning {
-      background: #fffaf0;
-      border-color: #ed8936;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    
-    th {
-      background: #f7fafc;
-      font-weight: 600;
-      color: #2d3748;
-    }
-    
-    tr:hover {
-      background: #f7fafc;
-    }
-    
-    .text-right {
-      text-align: right;
-    }
-    
-    .text-center {
-      text-align: center;
-    }
-    
-    .text-success {
-      color: #48bb78;
-    }
-    
-    .text-danger {
-      color: #f56565;
-    }
-    
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    
-    .badge-cash {
-      background: #bee3f8;
-      color: #2c5282;
-    }
-    
-    .badge-stocks {
-      background: #c6f6d5;
-      color: #22543d;
-    }
-    
-    .badge-gold {
-      background: #feebc8;
-      color: #7c2d12;
-    }
-    
-    .badge-investment {
-      background: #e9d8fd;
-      color: #44337a;
-    }
-    
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    
-    .modal.active {
-      display: flex;
-    }
-    
-    .modal-content {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      max-width: 500px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .modal-header {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: #1a202c;
-    }
-    
-    .tab-container {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 24px;
-      overflow-x: auto;
-    }
-    
-    .tab {
-      padding: 10px 20px;
-      border-radius: 8px;
-      background: #e2e8f0;
-      color: #2d3748;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.3s;
-    }
-    
-    .tab.active {
-      background: #4299e1;
-      color: white;
-    }
-    
-    .tab:hover:not(.active) {
-      background: #cbd5e0;
-    }
-    
-    .footer {
-      text-align: center;
-      color: white;
-      margin-top: 32px;
-      font-size: 14px;
-      line-height: 1.8;
-    }
-    
-    .footer p {
-      margin: 8px 0;
-    }
-    
-    .loading {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #fff;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    .hidden {
-      display: none !important;
-    }
-    
-    @media (max-width: 768px) {
-      body {
-        padding: 10px;
-      }
-      
-      h1 {
-        font-size: 24px;
-      }
-      
-      .header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      .btn-group {
-        flex-direction: column;
-      }
-      
-      .stat-value {
-        font-size: 24px;
-      }
-      
-      table {
-        font-size: 12px;
-      }
-      
-      th, td {
-        padding: 8px 4px;
-      }
-      
-      .card {
-        padding: 16px;
-      }
-    }
-  </style>
+  <meta name="viewport"="width=device-width, initial-scale=1.0">
+  <title>🤖 AI资产管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <div class="card">
-      <div class="header">
-        <div>
-          <h1>💰 Smart Asset Management System</h1>
-          <p class="subtitle">多平台资产管理 · 实时行情 · 智能分析</p>
-        </div>
-        <div class="btn-group">
-          <button class="btn-secondary" onclick="toggleValues()">
-            <span id="eyeIcon">👁️</span> <span id="eyeText">隐藏</span>
-          </button>
-          <button class="btn-primary" onclick="exportData()">💾 导出</button>
-          <button class="btn-success" onclick="document.getElementById('importFile').click()">
-            📤 导入备份
-          </button>
-          <button class="btn-warning" onclick="document.getElementById('statementFile').click()">
-            📄 导入账单
-          </button>
-          <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display:none">
-          <input type="file" id="statementFile" accept=".xlsx,.xls,.csv,.pdf" onchange="importStatement(event)" style="display:none">
-        </div>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div class="container mx-auto p-4 md:p-8">
+    <div class="bg-white rounded-lg shadow-xl p-6">
+      <!-- Header -->
+      <div class="border-b pb-4 mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+          🤖 AI智能资产管理系统
+        </h1>
+        <p class="text-gray-600">使用AI技术自动识别和分析您的资产账单</p>
       </div>
 
       <!-- API配置 -->
-      <div class="info-box">
-        <label>API服务器地址:</label>
-        <div style="display:flex; gap:8px; margin-top:8px">
-          <input 
-            type="text" 
-            id="apiUrl" 
-            placeholder="https://your-app.onrender.com"
-            style="flex:1"
-          />
-          <button class="btn-primary" onclick="testConnection()">🔍 测试</button>
-        </div>
-        <p style="margin-top:8px; font-size:12px; color:#718096">
-          💡 配置API服务器后可获取实时股价、金价和汇率
-        </p>
-      </div>
-
-      <!-- 导航标签 -->
-      <div class="tab-container">
-        <div class="tab active" onclick="switchTab('overview', event)">📊 总览</div>
-        <div class="tab" onclick="switchTab('stocks', event)">📈 股票</div>
-        <div class="tab" onclick="switchTab('gold', event)">💎 黄金</div>
-      </div>
-    </div>
-
-    <!-- 总览视图 -->
-    <div id="overview-view">
-      <!-- 统计卡片 -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">总资产</div>
-          <div class="stat-value" id="totalAssets">RM 0.00</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-label">可动资产</div>
-          <div class="stat-value" id="liquidAssets">RM 0.00</div>
-          <div class="stat-sub" id="liquidPercent">0% 总资产</div>
-        </div>
-        <div class="stat-card purple">
-          <div class="stat-label">不可动资产</div>
-          <div class="stat-value" id="illiquidAssets">RM 0.00</div>
-          <div class="stat-sub" id="illiquidPercent">0% 总资产</div>
-        </div>
-      </div>
-
-      <!-- 可动资产 -->
-      <div class="card">
-        <div class="header">
-          <h2>可动资产明细</h2>
-          <button class="btn-primary" onclick="openAddAssetModal()">➕ 添加资产</button>
-        </div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead>
-              <tr>
-                <th>名称</th>
-                <th>类别</th>
-                <th class="text-right">金额</th>
-                <th>备注</th>
-                <th class="text-center">操作</th>
-              </tr>
-            </thead>
-            <tbody id="liquidAssetsTable">
-              <tr>
-                <td colspan="5" class="text-center" style="color:#a0aec0; padding:24px">
-                  暂无数据，点击"添加资产"开始
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 不可动资产 -->
-      <div class="card">
-        <h2 style="margin-bottom:16px">不可动资产明细</h2>
-        <div style="overflow-x:auto">
-          <table>
-            <thead>
-              <tr>
-                <th>名称</th>
-                <th class="text-right">金额</th>
-                <th>备注</th>
-              </tr>
-            </thead>
-            <tbody id="illiquidAssetsTable">
-              <tr>
-                <td colspan="3" class="text-center" style="color:#a0aec0; padding:24px">
-                  暂无数据
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- 股票视图 -->
-    <div id="stocks-view" class="hidden">
-      <!-- 美股 -->
-      <div class="card">
-        <div class="header">
-          <h2>🇺🇸 美国股票</h2>
-          <div class="btn-group">
-            <button class="btn-success" onclick="updateAllStockPrices()" id="updateStocksBtn">
-              🔄 更新价格
-            </button>
-            <button class="btn-primary" onclick="openAddStockModal()">➕ 添加股票</button>
-          </div>
-        </div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead>
-              <tr>
-                <th>代码</th>
-                <th>名称</th>
-                <th class="text-right">股数</th>
-                <th class="text-right">平均成本</th>
-                <th class="text-right">当前价</th>
-                <th class="text-right">成本总额</th>
-                <th class="text-right">市值</th>
-                <th class="text-right">损益</th>
-              </tr>
-            </thead>
-            <tbody id="usStocksTable">
-              <tr>
-                <td colspan="8" class="text-center" style="color:#a0aec0; padding:24px">
-                  暂无数据
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 马股 -->
-      <div class="card">
-        <h2 style="margin-bottom:16px">🇲🇾 马来西亚股票</h2>
-        <div style="overflow-x:auto">
-          <table>
-            <thead>
-              <tr>
-                <th>代码</th>
-                <th>名称</th>
-                <th class="text-right">股数</th>
-                <th class="text-right">平均成本</th>
-                <th class="text-right">当前价</th>
-                <th class="text-right">成本总额</th>
-                <th class="text-right">市值</th>
-                <th class="text-right">损益</th>
-              </tr>
-            </thead>
-            <tbody id="myStocksTable">
-              <tr>
-                <td colspan="8" class="text-center" style="color:#a0aec0; padding:24px">
-                  暂无数据
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- 黄金视图 -->
-    <div id="gold-view" class="hidden">
-      <!-- 金价信息 -->
-      <div class="card" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color:white">
-        <div class="header" style="color:white">
-          <div>
-            <h2 style="color:white; margin-bottom:8px">916金价</h2>
-            <p id="goldUpdateTime" style="font-size:12px; opacity:0.9">未更新</p>
-          </div>
-          <button class="btn-secondary" onclick="updateGoldPrice()" id="updateGoldBtn">
-            🔄 更新金价
+      <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+        <label class="block mb-2 font-semibold text-gray-700">🔧 API服务器地址:</label>
+        <input 
+          type="text" 
+          id="apiUrl" 
+          class="w-full px-4 py-2 border rounded-lg mb-3 focus:ring-2 focus:ring-blue-500"
+          placeholder="https://your-api.onrender.com"
+        />
+        <div class="flex gap-2 flex-wrap">
+          <button 
+            onclick="testApi()" 
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          >
+            🔍 测试连接
+          </button>
+          <button 
+            onclick="getGoldPrice()" 
+            class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
+          >
+            💰 获取金价
           </button>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px">
-          <div style="background:rgba(255,255,255,0.2); padding:16px; border-radius:8px">
-            <div style="font-size:14px; opacity:0.9; margin-bottom:8px">零售价</div>
-            <div style="font-size:28px; font-weight:bold" id="goldRetailPrice">RM 0.00</div>
-            <div style="font-size:12px; margin-top:4px">每克</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.2); padding:16px; border-radius:8px">
-            <div style="font-size:14px; opacity:0.9; margin-bottom:8px">回收价 (93%)</div>
-            <div style="font-size:28px; font-weight:bold" id="goldBuybackPrice">RM 0.00</div>
-            <div style="font-size:12px; margin-top:4px">每克</div>
-          </div>
-        </div>
       </div>
 
-      <!-- 黄金持仓 -->
-      <div class="card">
-        <div class="header">
-          <h2>黄金持仓</h2>
-          <button class="btn-warning" onclick="openAddGoldModal()">➕ 添加黄金</button>
+      <!-- AI账单上传 -->
+      <div class="mb-6 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">
+          🤖 AI智能账单解析
+        </h2>
+        <p class="text-gray-600 mb-4">
+          上传您的券商月结单（PDF/Excel），AI将自动识别股票持仓、资产分配等信息
+        </p>
+        
+        <div class="mb-4">
+          <label class="block mb-2 font-semibold text-gray-700">
+            📄 选择文件 (支持PDF, Excel):
+          </label>
+          <input 
+            type="file" 
+            id="statementFile" 
+            accept=".pdf,.xlsx,.xls"
+            class="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg focus:border-purple-500 cursor-pointer"
+          />
+          <p class="text-sm text-gray-500 mt-2">
+            ✅ 支持格式: MOOMOO, Webull, 富途等券商PDF账单 | Excel资产表
+          </p>
         </div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead>
-              <tr>
-                <th>名称</th>
-                <th class="text-right">重量(克)</th>
-                <th class="text-right">购买价</th>
-                <th class="text-right">成本</th>
-                <th class="text-right">当前价值</th>
-                <th class="text-right">损益</th>
-                <th>备注</th>
-              </tr>
-            </thead>
-            <tbody id="goldTable">
-              <tr>
-                <td colspan="7" class="text-center" style="color:#a0aec0; padding:24px">
-                  暂无数据
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+
+        <button 
+          onclick="uploadStatement()" 
+          id="uploadBtn"
+          class="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-lg hover:from-purple-600 hover:to-pink-600 transition shadow-lg"
+        >
+          🚀 开始AI解析
+        </button>
       </div>
-    </div>
 
-    <!-- Footer -->
-    <div class="footer">
-      <p>💡 数据保存在浏览器本地，请定期导出备份</p>
-      <p>🔒 所有数据仅存储在您的设备上，完全私密安全</p>
-      <p>📱 支持多平台：MOOMOO, Webull, 通用券商账单</p>
-      <p style="margin-top:16px; font-size:12px; opacity:0.8">
-        Smart Asset Management System v1.0 | Created with ❤️
-      </p>
-    </div>
-  </div>
+      <!-- 结果显示 -->
+      <div id="result" class="p-6 bg-gray-50 rounded-lg min-h-[200px] border">
+        <p class="text-gray-500 text-center">等待操作...</p>
+      </div>
 
-  <!-- 添加资产模态框 -->
-  <div id="addAssetModal" class="modal">
-    <div class="modal-content">
-      <h3 class="modal-header">添加资产</h3>
-      <form id="addAssetForm">
-        <div class="input-group">
-          <label>名称</label>
-          <input type="text" name="name" required>
-        </div>
-        <div class="input-group">
-          <label>金额</label>
-          <input type="number" name="value" step="0.01" required>
-        </div>
-        <div class="input-group">
-          <label>类别</label>
-          <select name="category" required>
-            <option value="cash">现金</option>
-            <option value="stocks">股票</option>
-            <option value="gold">黄金</option>
-            <option value="investment">投资</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label>类型</label>
-          <select name="type" required>
-            <option value="liquid">可动资产</option>
-            <option value="illiquid">不可动资产</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label>备注</label>
-          <input type="text" name="notes">
-        </div>
-        <div style="display:flex; gap:8px; margin-top:20px">
-          <button type="submit" class="btn-primary" style="flex:1">添加</button>
-          <button type="button" class="btn-secondary" style="flex:1" onclick="closeModal('addAssetModal')">取消</button>
-        </div>
-      </form>
-    </div>
-  </div>
+      <!-- 使用说明 -->
+      <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+        <h3 class="font-bold text-green-800 mb-3">📖 使用说明</h3>
+        <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
+          <li><strong>配置API:</strong> 输入Render API地址，点击"测试连接"</li>
+          <li><strong>上传账单:</strong> 选择PDF或Excel文件</li>
+          <li><strong>AI解析:</strong> 点击"开始AI解析"，等待10-30秒</li>
+          <li><strong>查看结果:</strong> AI会自动提取股票代码、数量、成本等信息</li>
+          <li><strong>验证数据:</strong> 请检查AI提取的数据是否准确</li>
+        </ol>
+      </div>
 
-  <!-- 添加股票模态框 -->
-  <div id="addStockModal" class="modal">
-    <div class="modal-content">
-      <h3 class="modal-header">添加股票</h3>
-      <form id="addStockForm">
-        <div class="input-group">
-          <label>股票代码</label>
-          <input type="text" name="symbol" required placeholder="VOO, AAPL">
-        </div>
-        <div class="input-group">
-          <label>股票名称</label>
-          <input type="text" name="name" required>
-        </div>
-        <div class="input-group">
-          <label>持有股数</label>
-          <input type="number" name="shares" step="0.01" required>
-        </div>
-        <div class="input-group">
-          <label>平均成本</label>
-          <input type="number" name="avgPrice" step="0.01" required>
-        </div>
-        <div class="input-group">
-          <label>市场</label>
-          <select name="exchange" required>
-            <option value="US">美国 (US)</option>
-            <option value="MY">马来西亚 (MY)</option>
-          </select>
-        </div>
-        <div style="display:flex; gap:8px; margin-top:20px">
-          <button type="submit" class="btn-primary" style="flex:1">添加</button>
-          <button type="button" class="btn-secondary" style="flex:1" onclick="closeModal('addStockModal')">取消</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- 添加黄金模态框 -->
-  <div id="addGoldModal" class="modal">
-    <div class="modal-content">
-      <h3 class="modal-header">添加黄金</h3>
-      <form id="addGoldForm">
-        <div class="input-group">
-          <label>名称</label>
-          <input type="text" name="name" required placeholder="916金项链">
-        </div>
-        <div class="input-group">
-          <label>重量(克)</label>
-          <input type="number" name="weight" step="0.01" required>
-        </div>
-        <div class="input-group">
-          <label>购买价(每克)</label>
-          <input type="number" name="buyPrice" step="0.01" required>
-        </div>
-        <div class="input-group">
-          <label>备注</label>
-          <input type="text" name="notes">
-        </div>
-        <div style="display:flex; gap:8px; margin-top:20px">
-          <button type="submit" class="btn-warning" style="flex:1">添加</button>
-          <button type="button" class="btn-secondary" style="flex:1" onclick="closeModal('addGoldModal')">取消</button>
-        </div>
-      </form>
+      <div class="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+        <h3 class="font-bold text-yellow-800 mb-2">⚙️ 配置AI API（可选）</h3>
+        <p class="text-sm text-gray-600">
+          要使用AI解析功能，需要在Render环境变量中配置以下之一:
+        </p>
+        <ul class="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
+          <li><code class="bg-gray-200 px-2 py-1 rounded">ANTHROPIC_API_KEY</code> - Claude AI</li>
+          <li><code class="bg-gray-200 px-2 py-1 rounded">GROQ_API_KEY</code> - Groq (免费)</li>
+          <li><code class="bg-gray-200 px-2 py-1 rounded">OPENAI_API_KEY</code> - GPT</li>
+        </ul>
+        <p class="text-sm text-gray-600 mt-2">
+          💡 推荐使用 <strong>Groq</strong> (免费且快速): <a href="https://console.groq.com" target="_blank" class="text-blue-600 underline">console.groq.com</a>
+        </p>
+      </div>
     </div>
   </div>
 
   <script>
-    // 数据结构
-    let assets = {
-      liquid: [],
-      illiquid: [],
-      stocks: { us: [], malaysia: [] },
-      gold: []
-    };
-    
-    let showValues = true;
-    let goldPrice = { retail: 0, buyback: 0, updated: '' };
-    
-    // 初始化
-    function init() {
-      loadData();
-      loadApiUrl();
-      updateUI();
-      setupEventListeners();
-    }
-    
-    // 加载数据
-    function loadData() {
-      const saved = localStorage.getItem('smartAssets');
-      if (saved) {
-        try {
-          assets = JSON.parse(saved);
-        } catch (e) {
-          console.error('加载数据失败', e);
-        }
+    // 从localStorage加载API地址
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedUrl = localStorage.getItem('apiUrl');
+      if (savedUrl) {
+        document.getElementById('apiUrl').value = savedUrl;
       }
-    }
-    
-    // 保存数据
-    function saveData() {
-      localStorage.setItem('smartAssets', JSON.stringify(assets));
-    }
-    
-    // 加载API地址
-    function loadApiUrl() {
-      const saved = localStorage.getItem('apiUrl');
-      if (saved) {
-        document.getElementById('apiUrl').value = saved;
-      }
-    }
-    
-    // 保存API地址
-    function saveApiUrl() {
-      const url = document.getElementById('apiUrl').value;
-      if (url) {
-        localStorage.setItem('apiUrl', url);
-      }
-    }
-    
-    // 设置事件监听
-    function setupEventListeners() {
-      document.getElementById('addAssetForm').addEventListener('submit', handleAddAsset);
-      document.getElementById('addStockForm').addEventListener('submit', handleAddStock);
-      document.getElementById('addGoldForm').addEventListener('submit', handleAddGold);
-      document.getElementById('apiUrl').addEventListener('change', saveApiUrl);
-    }
-    
-    // 切换标签
-    function switchTab(tabName, event) {
-      // 更新标签样式
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-      event.target.classList.add('active');
-      
-      // 显示对应视图
-      document.getElementById('overview-view').classList.add('hidden');
-      document.getElementById('stocks-view').classList.add('hidden');
-      document.getElementById('gold-view').classList.add('hidden');
-      document.getElementById(tabName + '-view').classList.remove('hidden');
-    }
-    
-    // 切换显示/隐藏金额
-    function toggleValues() {
-      showValues = !showValues;
-      document.getElementById('eyeIcon').textContent = showValues ? '👁️' : '🙈';
-      document.getElementById('eyeText').textContent = showValues ? '隐藏' : '显示';
-      updateUI();
-    }
-    
-    // 计算总资产
-    function calculateTotal() {
-      const liquid = assets.liquid.reduce((sum, item) => sum + parseFloat(item.value || 0), 0);
-      const illiquid = assets.illiquid.reduce((sum, item) => sum + parseFloat(item.value || 0), 0);
-      return { liquid, illiquid, total: liquid + illiquid };
-    }
-    
-    // 格式化金额
-    function formatMoney(value) {
-      if (!showValues) return '****';
-      return 'RM ' + parseFloat(value).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-    }
-    
-    // 更新UI
-    function updateUI() {
-      const totals = calculateTotal();
-      
-      // 更新统计卡片
-      document.getElementById('totalAssets').textContent = formatMoney(totals.total);
-      document.getElementById('liquidAssets').textContent = formatMoney(totals.liquid);
-      document.getElementById('illiquidAssets').textContent = formatMoney(totals.illiquid);
-      
-      if (totals.total > 0) {
-        document.getElementById('liquidPercent').textContent = 
-          ((totals.liquid / totals.total) * 100).toFixed(1) + '% 总资产';
-        document.getElementById('illiquidPercent').textContent = 
-          ((totals.illiquid / totals.total) * 100).toFixed(1) + '% 总资产';
-      }
-      
-      // 更新资产表格
-      updateAssetsTable();
-      updateStocksTable();
-      updateGoldTable();
-    }
-    
-    // 更新资产表格
-    function updateAssetsTable() {
-      const liquidTable = document.getElementById('liquidAssetsTable');
-      const illiquidTable = document.getElementById('illiquidAssetsTable');
-      
-      if (assets.liquid.length === 0) {
-        liquidTable.innerHTML = '<tr><td colspan="5" class="text-center" style="color:#a0aec0; padding:24px">暂无数据，点击"添加资产"开始</td></tr>';
-      } else {
-        liquidTable.innerHTML = assets.liquid.map(asset => `
-          <tr>
-            <td>${asset.name}</td>
-            <td><span class="badge badge-${asset.category}">${asset.category}</span></td>
-            <td class="text-right" style="font-weight:600">${formatMoney(asset.value)}</td>
-            <td style="color:#718096">${asset.notes || '-'}</td>
-            <td class="text-center">
-              <button class="btn-danger" style="padding:6px 12px; font-size:12px" onclick="deleteAsset('liquid', ${asset.id})">删除</button>
-            </td>
-          </tr>
-        `).join('');
-      }
-      
-      if (assets.illiquid.length === 0) {
-        illiquidTable.innerHTML = '<tr><td colspan="3" class="text-center" style="color:#a0aec0; padding:24px">暂无数据</td></tr>';
-      } else {
-        illiquidTable.innerHTML = assets.illiquid.map(asset => `
-          <tr>
-            <td>${asset.name}</td>
-            <td class="text-right" style="font-weight:600">${formatMoney(asset.value)}</td>
-            <td style="color:#718096">${asset.notes || '-'}</td>
-          </tr>
-        `).join('');
-      }
-    }
-    
-    // 更新股票表格
-    function updateStocksTable() {
-      const usTable = document.getElementById('usStocksTable');
-      const myTable = document.getElementById('myStocksTable');
-      
-      if (assets.stocks.us.length === 0) {
-        usTable.innerHTML = '<tr><td colspan="8" class="text-center" style="color:#a0aec0; padding:24px">暂无数据</td></tr>';
-      } else {
-        usTable.innerHTML = assets.stocks.us.map(stock => {
-          const totalCost = stock.shares * stock.avgPrice;
-          const currentPrice = stock.currentPrice || stock.avgPrice;
-          const marketValue = stock.shares * currentPrice;
-          const pl = marketValue - totalCost;
-          const plPercent = (pl / totalCost) * 100;
-          
-          return `
-            <tr>
-              <td style="font-weight:600">${stock.symbol}</td>
-              <td>${stock.name}</td>
-              <td class="text-right">${stock.shares}</td>
-              <td class="text-right">$${stock.avgPrice.toFixed(2)}</td>
-              <td class="text-right">$${currentPrice.toFixed(2)}</td>
-              <td class="text-right">$${totalCost.toFixed(2)}</td>
-              <td class="text-right" style="font-weight:600">$${marketValue.toFixed(2)}</td>
-              <td class="text-right ${pl >= 0 ? 'text-success' : 'text-danger'}" style="font-weight:600">
-                $${pl.toFixed(2)} (${plPercent.toFixed(2)}%)
-              </td>
-            </tr>
-          `;
-        }).join('');
-      }
-      
-      if (assets.stocks.malaysia.length === 0) {
-        myTable.innerHTML = '<tr><td colspan="8" class="text-center" style="color:#a0aec0; padding:24px">暂无数据</td></tr>';
-      } else {
-        myTable.innerHTML = assets.stocks.malaysia.map(stock => {
-          const totalCost = stock.shares * stock.avgPrice;
-          const currentPrice = stock.currentPrice || stock.avgPrice;
-          const marketValue = stock.shares * currentPrice;
-          const pl = marketValue - totalCost;
-          const plPercent = (pl / totalCost) * 100;
-          
-          return `
-            <tr>
-              <td style="font-weight:600">${stock.symbol}</td>
-              <td>${stock.name}</td>
-              <td class="text-right">${stock.shares}</td>
-              <td class="text-right">RM ${stock.avgPrice.toFixed(2)}</td>
-              <td class="text-right">RM ${currentPrice.toFixed(2)}</td>
-              <td class="text-right">RM ${totalCost.toFixed(2)}</td>
-              <td class="text-right" style="font-weight:600">RM ${marketValue.toFixed(2)}</td>
-              <td class="text-right ${pl >= 0 ? 'text-success' : 'text-danger'}" style="font-weight:600">
-                RM ${pl.toFixed(2)} (${plPercent.toFixed(2)}%)
-              </td>
-            </tr>
-          `;
-        }).join('');
-      }
-    }
-    
-    // 更新黄金表格
-    function updateGoldTable() {
-      const table = document.getElementById('goldTable');
-      
-      if (assets.gold.length === 0) {
-        table.innerHTML = '<tr><td colspan="7" class="text-center" style="color:#a0aec0; padding:24px">暂无数据</td></tr>';
-      } else {
-        table.innerHTML = assets.gold.map(item => {
-          const cost = item.weight * item.buyPrice;
-          const currentValue = goldPrice.buyback > 0 ? item.weight * goldPrice.buyback : cost;
-          const pl = currentValue - cost;
-          const plPercent = (pl / cost) * 100;
-          
-          return `
-            <tr>
-              <td>${item.name}</td>
-              <td class="text-right">${item.weight}</td>
-              <td class="text-right">RM ${item.buyPrice.toFixed(2)}</td>
-              <td class="text-right">RM ${cost.toFixed(2)}</td>
-              <td class="text-right" style="font-weight:600">RM ${currentValue.toFixed(2)}</td>
-              <td class="text-right ${pl >= 0 ? 'text-success' : 'text-danger'}" style="font-weight:600">
-                RM ${pl.toFixed(2)} (${plPercent.toFixed(2)}%)
-              </td>
-              <td style="color:#718096">${item.notes || '-'}</td>
-            </tr>
-          `;
-        }).join('');
-      }
-    }
-    
-    // 模态框操作
-    function openAddAssetModal() {
-      document.getElementById('addAssetModal').classList.add('active');
-    }
-    
-    function openAddStockModal() {
-      document.getElementById('addStockModal').classList.add('active');
-    }
-    
-    function openAddGoldModal() {
-      document.getElementById('addGoldModal').classList.add('active');
-    }
-    
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.remove('active');
-    }
-    
-    // 处理表单提交
-    function handleAddAsset(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const asset = {
-        id: Date.now(),
-        name: formData.get('name'),
-        value: parseFloat(formData.get('value')),
-        category: formData.get('category'),
-        notes: formData.get('notes')
-      };
-      
-      const type = formData.get('type');
-      assets[type].push(asset);
-      
-      saveData();
-      updateUI();
-      closeModal('addAssetModal');
-      e.target.reset();
-    }
-    
-    function handleAddStock(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const stock = {
-        symbol: formData.get('symbol'),
-        name: formData.get('name'),
-        shares: parseFloat(formData.get('shares')),
-        avgPrice: parseFloat(formData.get('avgPrice')),
-        currentPrice: 0,
-        exchange: formData.get('exchange')
-      };
-      
-      const market = stock.exchange === 'US' ? 'us' : 'malaysia';
-      assets.stocks[market].push(stock);
-      
-      saveData();
-      updateUI();
-      closeModal('addStockModal');
-      e.target.reset();
-    }
-    
-    function handleAddGold(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const gold = {
-        id: Date.now(),
-        name: formData.get('name'),
-        weight: parseFloat(formData.get('weight')),
-        buyPrice: parseFloat(formData.get('buyPrice')),
-        notes: formData.get('notes')
-      };
-      
-      assets.gold.push(gold);
-      
-      saveData();
-      updateUI();
-      closeModal('addGoldModal');
-      e.target.reset();
-    }
-    
-    // 删除资产
-    function deleteAsset(type, id) {
-      if (confirm('确定要删除这项资产吗？')) {
-        assets[type] = assets[type].filter(item => item.id !== id);
-        saveData();
-        updateUI();
-      }
-    }
-    
-    // 导出数据
-    function exportData() {
-      const dataStr = JSON.stringify(assets, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `资产数据_${new Date().toISOString().split('T')[0]}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-      alert('✅ 数据导出成功！');
-    }
-    
-    // 导入数据
-    function importData(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            assets = JSON.parse(e.target.result);
-            saveData();
-            updateUI();
-            alert('✅ 数据导入成功！');
-          } catch (error) {
-            alert('❌ 导入失败，文件格式不正确');
-          }
-        };
-        reader.readAsText(file);
-      }
-    }
-    
-    // 导入账单
-    async function importStatement(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      
+    });
+
+    // 测试API连接
+    async function testApi() {
       const apiUrl = document.getElementById('apiUrl').value.trim();
       if (!apiUrl) {
-        alert('请先配置API服务器地址');
+        alert('请输入API服务器地址');
         return;
       }
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      try {
-        // 显示加载提示
-        const loadingMsg = document.createElement('div');
-        loadingMsg.id = 'loadingMsg';
-        loadingMsg.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:30px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.3); z-index:2000; text-align:center;';
-        loadingMsg.innerHTML = '<div class="loading" style="width:40px; height:40px; margin:0 auto 16px"></div><div style="font-size:18px; font-weight:600">正在解析账单...</div><div style="color:#718096; margin-top:8px">请稍候</div>';
-        document.body.appendChild(loadingMsg);
-        
-        const response = await fetch(`${apiUrl}/api/parse-statement`, {
-          method: 'POST',
-          body: formData
-        });
-        
-        const result = await response.json();
-        
-        // 移除加载提示
-        document.body.removeChild(loadingMsg);
-        
-        if (result.success) {
-          // 合并数据
-          const data = result.data;
-          
-          let totalImported = 0;
-          
-          // 合并可动资产
-          if (data.liquid_assets && data.liquid_assets.length > 0) {
-            data.liquid_assets.forEach(asset => {
-              if (!isNaN(asset.value) && asset.value > 0) {
-                assets.liquid.push({
-                  id: Date.now() + Math.random(),
-                  ...asset
-                });
-                totalImported++;
-              }
-            });
-          }
-          
-          // 合并不可动资产
-          if (data.illiquid_assets && data.illiquid_assets.length > 0) {
-            data.illiquid_assets.forEach(asset => {
-              if (!isNaN(asset.value) && asset.value > 0) {
-                assets.illiquid.push({
-                  id: Date.now() + Math.random(),
-                  ...asset
-                });
-                totalImported++;
-              }
-            });
-          }
-          
-          // 合并马股
-          if (data.stocks_my && data.stocks_my.length > 0) {
-            assets.stocks.malaysia.push(...data.stocks_my);
-            totalImported += data.stocks_my.length;
-          }
-          
-          // 合并美股
-          if (data.stocks_us && data.stocks_us.length > 0) {
-            assets.stocks.us.push(...data.stocks_us);
-            totalImported += data.stocks_us.length;
-          }
-          
-          // 合并黄金
-          if (data.gold && data.gold.length > 0) {
-            data.gold.forEach(gold => {
-              assets.gold.push({
-                id: Date.now() + Math.random(),
-                ...gold
-              });
-              totalImported++;
-            });
-          }
-          
-          saveData();
-          updateUI();
-          
-          alert(`✅ 账单导入成功！\n\n共导入 ${totalImported} 项资产\n- 可动资产: ${data.liquid_assets.length}\n- 不可动资产: ${data.illiquid_assets.length}\n- 马股: ${data.stocks_my.length}\n- 美股: ${data.stocks_us.length}\n- 黄金: ${data.gold.length}`);
-        } else {
-          alert('❌ 账单解析失败: ' + result.error);
-        }
-      } catch (error) {
-        // 移除加载提示
-        const loadingMsg = document.getElementById('loadingMsg');
-        if (loadingMsg) document.body.removeChild(loadingMsg);
-        
-        alert('❌ 账单导入失败: ' + error.message);
-      }
-      
-      // 清空文件输入
-      event.target.value = '';
-    }
-    
-    // API 功能
-    async function testConnection() {
-      const apiUrl = document.getElementById('apiUrl').value.trim();
-      if (!apiUrl) {
-        alert('请先输入API服务器地址');
-        return;
-      }
-      
+      localStorage.setItem('apiUrl', apiUrl);
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p class="text-blue-600">⏳ 正在连接...</p>';
       try {
         const response = await fetch(`${apiUrl}/api/health`);
         const data = await response.json();
-        alert('✅ API连接成功！\n' + JSON.stringify(data, null, 2));
+        resultDiv.innerHTML = `
+          <div class="text-green-600">
+            <p class="font-bold mb-2 text-lg">✅ API连接成功！</p>
+            <div class="bg-white p-4 rounded-lg">
+              <p class="mb-2"><strong>服务状态:</strong></p>
+              <ul class="list-disc list-inside space-y-1 text-sm">
+                <li>金价API: ${data.services.gold_price === 'ok' ? '✅' : '❌'}</li>
+                <li>股票API: ${data.services.stock_price === 'ok' ? '✅' : '❌'}</li>
+                <li>AI解析: ${data.services.ai_parser === 'configured' ? '✅ 已配置' : '⚠️ 未配置'}</li>
+              </ul>
+              ${data.ai_available ? `
+                <p class="mt-3 text-sm"><strong>可用AI:</strong></p>
+                <ul class="list-disc list-inside text-sm">
+                  ${data.ai_available.anthropic ? '<li>✅ Anthropic Claude</li>' : ''}
+                  ${data.ai_available.groq ? '<li>✅ Groq</li>' : ''}
+                  ${data.ai_available.openai ? '<li>✅ OpenAI</li>' : ''}
+                </ul>
+              ` : ''}
+            </div>
+          </div>
+        `;
       } catch (error) {
-        alert('❌ 连接失败: ' + error.message);
+        resultDiv.innerHTML = `
+          <div class="text-red-600">
+            <p class="font-bold">❌ 连接失败</p>
+            <p class="text-sm mt-2">${error.message}</p>
+          </div>
+        `;
       }
     }
-    
-    async function updateGoldPrice() {
+
+    // 获取金价
+    async function getGoldPrice() {
       const apiUrl = document.getElementById('apiUrl').value.trim();
       if (!apiUrl) {
         alert('请先输入API服务器地址');
         return;
       }
-      
-      const btn = document.getElementById('updateGoldBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading"></span> 更新中...';
-      
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p class="text-blue-600">⏳ 正在获取金价...</p>';
       try {
         const response = await fetch(`${apiUrl}/api/gold-price`);
-        const result = await response.json();
-        
-        if (result.success) {
-          goldPrice.retail = result.data.gold_916;
-          goldPrice.buyback = result.data.gold_916_buyback_93;
-          goldPrice.updated = result.data.last_updated;
-          
-          document.getElementById('goldRetailPrice').textContent = `RM ${goldPrice.retail.toFixed(2)}`;
-          document.getElementById('goldBuybackPrice').textContent = `RM ${goldPrice.buyback.toFixed(2)}`;
-          document.getElementById('goldUpdateTime').textContent = `更新时间: ${goldPrice.updated}`;
-          
-          updateGoldTable();
-          alert(`✅ 金价已更新！\n零售价：RM ${goldPrice.retail}/克\n回收价：RM ${goldPrice.buyback}/克`);
+        const data = await response.json();
+        if (data.success) {
+          const prices = data.data;
+          resultDiv.innerHTML = `
+            <div class="text-green-600">
+              <p class="font-bold text-xl mb-3">✅ 916金价已更新！</p>
+              <div class="bg-white p-4 rounded-lg space-y-2">
+                <p><span class="font-semibold">零售价:</span> RM ${prices.gold_916}/克</p>
+                <p><span class="font-semibold">回收价 (93%):</span> RM ${prices.gold_916_buyback_93}/克</p>
+                <p><span class="font-semibold">回收价 (95%):</span> RM ${prices.gold_916_buyback_95}/克</p>
+                <p class="text-sm text-gray-600 mt-3">更新时间: ${prices.last_updated}</p>
+                <p class="text-sm text-gray-600">数据来源: ${prices.source}</p>
+              </div>
+            </div>
+          `;
         }
       } catch (error) {
-        alert('❌ 更新失败: ' + error.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '🔄 更新金价';
+        resultDiv.innerHTML = `<div class="text-red-600"><p>❌ ${error.message}</p></div>`;
       }
     }
-    
-    async function updateAllStockPrices() {
+
+    // 上传账单
+    async function uploadStatement() {
       const apiUrl = document.getElementById('apiUrl').value.trim();
       if (!apiUrl) {
-        alert('请先配置API服务器地址');
+        alert('请先输入API服务器地址');
         return;
       }
+
+      const fileInput = document.getElementById('statementFile');
+      const file = fileInput.files[0];
       
-      const btn = document.getElementById('updateStocksBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading"></span> 更新中...';
+      if (!file) {
+        alert('请选择文件');
+        return;
+      }
+
+      const resultDiv = document.getElementById('result');
+      const uploadBtn = document.getElementById('uploadBtn');
       
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '⏳ AI分析中...（可能需要10-30秒）';
+      uploadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      
+      resultDiv.innerHTML = `
+        <div class="text-blue-600 text-center">
+          <div class="animate-pulse">
+            <p class="text-xl font-bold mb-2">🤖 AI正在分析您的账单...</p>
+            <p class="text-sm">这可能需要10-30秒，请耐心等待</p>
+          </div>
+        </div>
+      `;
+
       try {
-        let updated = 0;
-        
-        // 更新美股
-        for (let stock of assets.stocks.us) {
-          try {
-            const response = await fetch(`${apiUrl}/api/stock-price/${stock.symbol}?exchange=US`);
-            const result = await response.json();
-            if (result.success) {
-              stock.currentPrice = result.data.price;
-              updated++;
-            }
-          } catch (e) {
-            console.error(`更新 ${stock.symbol} 失败:`, e);
-          }
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${apiUrl}/api/parse-statement-ai`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          displayResults(data);
+        } else {
+          resultDiv.innerHTML = `
+            <div class="text-red-600">
+              <p class="font-bold text-lg">❌ 解析失败</p>
+              <p class="mt-2">${data.error}</p>
+              ${data.raw_response ? `
+                <details class="mt-3">
+                  <summary class="cursor-pointer text-sm">查看AI响应</summary>
+                  <pre class="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">${data.raw_response}</pre>
+                </details>
+              ` : ''}
+            </div>
+          `;
         }
-        
-        // 更新马股
-        for (let stock of assets.stocks.malaysia) {
-          try {
-            const response = await fetch(`${apiUrl}/api/stock-price/${stock.symbol}?exchange=MY`);
-            const result = await response.json();
-            if (result.success) {
-              stock.currentPrice = result.data.price;
-              updated++;
-            }
-          } catch (e) {
-            console.error(`更新 ${stock.symbol} 失败:`, e);
-          }
-        }
-        
-        saveData();
-        updateUI();
-        alert(`✅ 股票价格已更新！\n成功更新 ${updated} 只股票`);
       } catch (error) {
-        alert('❌ 更新失败: ' + error.message);
+        resultDiv.innerHTML = `
+          <div class="text-red-600">
+            <p class="font-bold">❌ 上传失败</p>
+            <p class="text-sm mt-2">${error.message}</p>
+          </div>
+        `;
       } finally {
-        btn.disabled = false;
-        btn.innerHTML = '🔄 更新价格';
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '🚀 开始AI解析';
+        uploadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
       }
     }
-    
-    // 页面加载时初始化
-    window.addEventListener('DOMContentLoaded', init);
+
+    // 显示解析结果
+    function displayResults(data) {
+      const resultDiv = document.getElementById('result');
+      const parsed = data.data;
+      const report = data.report;
+
+      let html = `
+        <div class="space-y-4">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h3 class="text-xl font-bold text-green-800 mb-3">✅ AI解析成功！</h3>
+            
+            ${report ? `
+              <div class="bg-white rounded-lg p-4 mb-4">
+                <h4 class="font-bold text-gray-800 mb-2">📊 资产概览</h4>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                  <div><span class="text-gray-600">总资产:</span> <span class="font-bold">RM ${report.summary.total_assets.toFixed(2)}</span></div>
+                  <div><span class="text-gray-600">现金余额:</span> <span class="font-bold">RM ${report.summary.cash_balance.toFixed(2)}</span></div>
+                  <div><span class="text-gray-600">马股市值:</span> <span class="font-bold">RM ${report.summary.stock_holdings_my.toFixed(2)}</span></div>
+                  <div><span class="text-gray-600">美股市值:</span> <span class="font-bold">RM ${report.summary.stock_holdings_us.toFixed(2)}</span></div>
+                </div>
+              </div>
+            ` : ''}
+      `;
+
+      // 显示马股
+      if (parsed.stocks_my && parsed.stocks_my.length > 0) {
+        html += `
+          <div class="bg-white rounded-lg p-4 border">
+            <h4 class="font-bold text-gray-800 mb-3">🇲🇾 马股持仓 (${parsed.stocks_my.length})</h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="p-2 text-left">代码</th>
+                    <th class="p-2 text-right">数量</th>
+                    <th class="p-2 text-right">成本价</th>
+                    <th class="p-2 text-right">市值</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${parsed.stocks_my.map(stock => `
+                    <tr class="border-t">
+                      <td class="p-2">${stock.symbol}</td>
+                      <td class="p-2 text-right">${stock.shares}</td>
+                      <td class="p-2 text-right">RM ${stock.avgPrice.toFixed(2)}</td>
+                      <td class="p-2 text-right font-semibold">RM ${(stock.shares * stock.avgPrice).toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      // 显示美股
+      if (parsed.stocks_us && parsed.stocks_us.length > 0) {
+        html += `
+          <div class="bg-white rounded-lg p-4 border">
+            <h4 class="font-bold text-gray-800 mb-3">🇺🇸 美股持仓 (${parsed.stocks_us.length})</h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="p-2 text-left">代码</th>
+                    <th class="p-2 text-right">数量</th>
+                    <th class="p-2 text-right">成本价</th>
+                    <th class="p-2 text-right">市值</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${parsed.stocks_us.map(stock => `
+                    <tr class="border-t">
+                      <td class="p-2">${stock.symbol}</td>
+                      <td class="p-2 text-right">${stock.shares}</td>
+                      <td class="p-2 text-right">$${stock.avgPrice.toFixed(2)}</td>
+                      <td class="p-2 text-right font-semibold">$${(stock.shares * stock.avgPrice).toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      // 显示其他资产
+      if (parsed.liquid_assets && parsed.liquid_assets.length > 0) {
+        html += `
+          <div class="bg-white rounded-lg p-4 border">
+            <h4 class="font-bold text-gray-800 mb-3">💰 可动资产 (${parsed.liquid_assets.length})</h4>
+            <ul class="space-y-2 text-sm">
+              ${parsed.liquid_assets.map(asset => `
+                <li class="flex justify-between border-b pb-2">
+                  <span>${asset.name}</span>
+                  <span class="font-semibold">RM ${asset.value.toFixed(2)}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      html += `
+          <div class="bg-blue-50 rounded-lg p-4 text-sm">
+            <p class="text-gray-600">
+              ${data.ai_analysis ? `
+                <span class="font-semibold">提取方式:</span> ${data.ai_analysis.extraction_method}<br>
+              ` : ''}
+              <span class="font-semibold">解析时间:</span> ${new Date(data.timestamp).toLocaleString('zh-CN')}
+            </p>
+            <p class="text-yellow-700 mt-2">
+              ⚠️ 请仔细核对AI提取的数据是否准确！
+            </p>
+          </div>
+        </div>
+      `;
+
+      resultDiv.innerHTML = html;
+    }
   </script>
 </body>
 </html>
