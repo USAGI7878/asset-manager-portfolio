@@ -58,68 +58,30 @@ def save_cache(cache_key, data):
 
 # ==================== 金价API ====================
 
-@app.route('/api/gold-price', methods=['GET'])
-def get_gold_price():
-    """获取916金实时价格"""
-    force_refresh = request.args.get('force_refresh', 'false').lower() == 'true'
+@app.route('/api/parse-statement-ai', methods=['POST'])
+def parse_statement_ai():
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': '未上传文件'})
     
-    if not force_refresh:
-        cached = load_cache('gold_price')
-        if cached:
-            return jsonify(cached)
-    
-    try:
-        url = "https://www.buysilvermalaysia.com/live-price"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-        
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        prices = {}
-        
-        # 提取金价（简化版）
-        text = response.text
-        gold_916_match = re.search(r'Gold\s*916.*?RM\s*([\d,]+\.?\d*)', text, re.IGNORECASE)
-        
-        if gold_916_match:
-            price = float(gold_916_match.group(1).replace(',', ''))
-            prices['gold_916'] = price
-            prices['gold_916_buyback_93'] = round(price * 0.93, 2)
-            prices['gold_916_buyback_95'] = round(price * 0.95, 2)
-        else:
-            # 使用参考价格
-            prices = {
-                'gold_916': 630.00,
-                'gold_916_buyback_93': 585.90,
-                'gold_916_buyback_95': 598.50,
-                'note': '参考价格'
-            }
-        
-        prices['timestamp'] = datetime.now().isoformat()
-        prices['last_updated'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        prices['source'] = 'BuySilverMalaysia.com'
-        
-        result = {'success': True, 'data': prices}
-        save_cache('gold_price', result)
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        # 返回参考价格
-        prices = {
-            'gold_916': 630.00,
-            'gold_916_buyback_93': 585.90,
-            'gold_916_buyback_95': 598.50,
-            'timestamp': datetime.now().isoformat(),
-            'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'source': 'Reference Price',
-            'error': str(e)
-        }
-        result = {'success': True, 'data': prices}
-        return jsonify(result)
+    file = request.files['file']
+    file_content = file.read()
+    filename = file.filename.lower()
+
+    if filename.endswith(('.pdf')):
+        res = ai_parser._parse_pdf_with_ai(file_content)
+    elif filename.endswith(('.jpg', '.jpeg', '.png')):
+        res = ai_parser._parse_image_with_ai(file_content)
+    else:
+        return jsonify({'success': False, 'error': '格式不支持'})
+
+    return jsonify(res)
+
+@app.route('/api/ai-advisor', methods=['POST'])
+def ai_advisor():
+    """新增：全盘总结分析接口"""
+    user_db = request.get_json()
+    advice = ai_parser.get_financial_advice(user_db)
+    return jsonify({'success': True, 'advice': advice})
 
 # ==================== AI账单解析API ====================
 
