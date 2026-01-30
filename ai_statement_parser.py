@@ -19,10 +19,11 @@ class AIAssetStatementParser:
         self.openai_api_key = os.getenv('OPENAI_API_KEY', '')
         
     def parse_file_with_ai(self, file_content, file_type='pdf', filename=''):
-        """入口函数：根据类型选择解析方式"""
+        """入口函数"""
         try:
             if file_type in ['xlsx', 'xls', 'excel']:
-                return self._parse_excel_with_ai(file_content)
+                # 这里假设你已经有了 _parse_excel_with_ai
+                return {'success': False, 'error': 'Excel解析尚未实现'}
             elif file_type == 'pdf':
                 return self._parse_pdf_with_ai(file_content)
             elif file_type in ['jpg', 'jpeg', 'png', 'image']:
@@ -36,7 +37,7 @@ class AIAssetStatementParser:
         return base64.b64encode(file_content).decode('utf-8')
 
     def _parse_image_with_ai(self, file_content):
-        """图片视觉解析 (GPT-4o-mini)"""
+        """图片视觉解析"""
         if not self.openai_api_key:
             return {'success': False, 'error': '未配置 OpenAI API Key'}
         
@@ -63,7 +64,7 @@ class AIAssetStatementParser:
             if response.status_code == 200:
                 content = response.json()['choices'][0]['message']['content']
                 return self._parse_ai_response(content)
-            return {'success': False, 'error': f'API报错: {response.text}'}
+            return {'success': False, 'error': f'API报错: {response.status_code}'}
         except Exception as e:
             return {'success': False, 'error': f'视觉解析失败: {str(e)}'}
 
@@ -81,16 +82,17 @@ class AIAssetStatementParser:
                 return {'success': False, 'error': 'PDF无文字，请拍照上传'}
             return self._analyze_with_ai(pdf_text, 'PDF')
         except Exception as e:
-            return {'success': False, 'error': f'PDF读取失败: {str(e)}'}
+            return {'success': False, 'error': f'PDF解析过程错误: {str(e)}'}
 
     def _build_analysis_prompt(self, text_content, file_type):
+        # 修复核心：将 JSON 范例的大括号改为 {{ 和 }}
         return f"""你是一个财务审计AI。请从{file_type}中提取资产数据。
         目标提取：1. 股票(代码/股数/成本价) 2. 现金余额 3. 黄金重量。
         规则：马股代码为4位数字；美股为大写字母。
         必须返回纯JSON，格式如下：
         {{
-          "stocks_my": [{"symbol": "1155", "shares": 100, "avgPrice": 9.20}],
-          "stocks_us": [{"symbol": "TSLA", "shares": 10, "avgPrice": 250.5}],
+          "stocks_my": [{{"symbol": "1155", "shares": 100, "avgPrice": 9.20}}],
+          "stocks_us": [{{"symbol": "TSLA", "shares": 10, "avgPrice": 250.5}}],
           "cash_balance": 5000.0,
           "gold": []
         }}
@@ -108,15 +110,22 @@ class AIAssetStatementParser:
                 json={'model': 'gpt-4o-mini', 'messages': [{'role': 'user', 'content': prompt}], 'temperature': 0},
                 timeout=30
             )
-            return self._parse_ai_response(response.json()['choices'][0]['message']['content'])
-        except: return {'success': False, 'error': 'OpenAI调用失败'}
+            if response.status_code == 200:
+                return self._parse_ai_response(response.json()['choices'][0]['message']['content'])
+            return {'success': False, 'error': 'OpenAI API 请求失败'}
+        except Exception as e: 
+            return {'success': False, 'error': f'调用异常: {str(e)}'}
 
     def _parse_ai_response(self, ai_response):
         try:
+            # 使用正则表达式提取 JSON 部分，防止 AI 返回多余的文字
             json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
-            data = json.loads(json_match.group(0))
-            return {'success': True, 'data': data}
-        except: return {'success': False, 'error': 'JSON格式化失败'}
+            if json_match:
+                data = json.loads(json_match.group(0))
+                return {'success': True, 'data': data}
+            return {'success': False, 'error': 'AI未返回有效的JSON格式'}
+        except Exception as e: 
+            return {'success': False, 'error': f'JSON解析失败: {str(e)}'}
 
     def get_financial_advice(self, db_data):
         """生成财务建议"""
