@@ -1,291 +1,44 @@
-"""
-AI增强资产管理API服务器
-集成AI辅助账单解析功能
-"""
-
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request
 from flask_cors import CORS
-import requests
-from bs4 import BeautifulSoup
-import re
-from datetime import datetime, timedelta
-import json
 import os
-from dotenv import load_dotenv
-import io
-
-# 导入AI解析器
 from ai_statement_parser import AIAssetStatementParser
-
-load_dotenv()
+from gold_scraper import get_gold_prices # 假设你已有该爬虫脚本
 
 app = Flask(__name__)
 CORS(app)
 
-# API配置
-ALPHA_VANTAGE_KEY = os.getenv('ALPHA_VANTAGE_API_KEY')
-
-# 缓存配置
-CACHE_DIR = 'cache'
-os.makedirs(CACHE_DIR, exist_ok=True)
-CACHE_DURATION = timedelta(minutes=int(os.getenv('CACHE_DURATION_MINUTES', 15)))
-
-# 初始化AI解析器
-ai_parser = AIAssetStatementParser()
-
-def load_cache(cache_key):
-    """加载缓存"""
-    cache_file = os.path.join(CACHE_DIR, f'{cache_key}.json')
-    if os.path.exists(cache_file):
-        try:
-            with open(cache_file, 'r') as f:
-                cache = json.load(f)
-                cache_time = datetime.fromisoformat(cache['timestamp'])
-                if datetime.now() - cache_time < CACHE_DURATION:
-                    return cache
-        except:
-            pass
-    return None
-
-def save_cache(cache_key, data):
-    """保存缓存"""
-    cache_file = os.path.join(CACHE_DIR, f'{cache_key}.json')
-    try:
-        with open(cache_file, 'w') as f:
-            json.dump(data, f)
-    except:
-        pass
-
-# ==================== 金价API ====================
+# 初始化解析器
+ai_handler = AIAssetStatementParser()
 
 @app.route('/api/parse-statement-ai', methods=['POST'])
-def parse_statement_ai():
+def api_parse_statement():  # 函数名已修改，避免与类方法重名
     if 'file' not in request.files:
-        return jsonify({'success': False, 'error': '未上传文件'})
+        return jsonify({'success': False, 'error': '未找到文件'})
     
     file = request.files['file']
-    file_content = file.read()
-    filename = file.filename.lower()
-
-    if filename.endswith(('.pdf')):
-        res = ai_parser._parse_pdf_with_ai(file_content)
-    elif filename.endswith(('.jpg', '.jpeg', '.png')):
-        res = ai_parser._parse_image_with_ai(file_content)
-    else:
-        return jsonify({'success': False, 'error': '格式不支持'})
-
-    return jsonify(res)
+    content = file.read()
+    ext = file.filename.split('.')[-1].lower()
+    
+    file_type = 'image' if ext in ['jpg', 'jpeg', 'png'] else ext
+    result = ai_handler.parse_file_with_ai(content, file_type, file.filename)
+    return jsonify(result)
 
 @app.route('/api/ai-advisor', methods=['POST'])
-def ai_advisor():
-    """新增：全盘总结分析接口"""
-    user_db = request.get_json()
-    advice = ai_parser.get_financial_advice(user_db)
+def api_get_advice():
+    db_data = request.json
+    advice = ai_handler.get_financial_advice(db_data)
     return jsonify({'success': True, 'advice': advice})
 
-# ==================== AI账单解析API ====================
-
-@app.route('/api/parse-statement-ai', methods=['POST'])
-def parse_statement_ai():
-    """使用AI解析账单文件"""
-    try:
-        # 检查是否有文件上传
-        if 'file' not in request.files:
-            return jsonify({
-                'success': False,
-                'error': '未上传文件'
-            }), 400
-        
-        file = request.files['file']
-        
-        if file.filename == '':
-            return jsonify({
-                'success': False,
-                'error': '文件名为空'
-            }), 400
-        
-        # 获取文件类型
-        filename = file.filename.lower()
-        if filename.endswith('.xlsx') or filename.endswith('.xls'):
-            file_type = 'excel'
-        elif filename.endswith('.pdf'):
-            file_type = 'pdf'
-        elif filename.endswith(('.jpg', '.jpeg', '.png')):
-            file_type = 'image'
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'不支持的文件格式: {filename}'
-            }), 400
-        
-        # 读取文件内容
-        file_content = file.read()
-        
-        print(f"收到文件: {filename}, 大小: {len(file_content)} bytes")
-        
-        # 使用AI解析
-        result = ai_parser.parse_file_with_ai(
-            file_content=file_content,
-            file_type=file_type,
-            filename=filename
-        )
-        
-        if result.get('success'):
-            # 生成报告
-            report = ai_parser.generate_asset_report(result)
-            result['report'] = report
-            
-            print(f"解析成功: {report['summary']}")
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        print(f"账单解析错误: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': f'服务器错误: {str(e)}'
-        }), 500
-
-# ==================== 股票价格API ====================
-
-@app.route('/api/stock-price/<symbol>', methods=['GET'])
-def get_stock_price(symbol):
-    """获取单只股票价格"""
-    if not ALPHA_VANTAGE_KEY:
-        return jsonify({
-            'success': False, 
-            'error': '未配置API密钥'
-        }), 500
-    
-    exchange = request.args.get('exchange', 'US')
-    cache_key = f'stock_{symbol}_{exchange}'
-    
-    cached = load_cache(cache_key)
-    if cached:
-        return jsonify(cached)
-    
-    try:
-        full_symbol = f"{symbol}.KL" if exchange in ['KL', 'KLSE'] else symbol
-        
-        params = {
-            'function': 'GLOBAL_QUOTE',
-            'symbol': full_symbol,
-            'apikey': ALPHA_VANTAGE_KEY
-        }
-        
-        response = requests.get('https://www.alphavantage.co/query', params=params, timeout=10)
-        data = response.json()
-        
-        quote = data.get('Global Quote', {})
-        
-        if not quote:
-            return jsonify({'success': False, 'error': '无法获取数据'}), 404
-        
-        result = {
-            'success': True,
-            'symbol': symbol,
-            'exchange': exchange,
-            'price': float(quote.get('05. price', 0)),
-            'change': float(quote.get('09. change', 0)),
-            'change_percent': quote.get('10. change percent', '0%').replace('%', ''),
-            'volume': int(float(quote.get('06. volume', 0))),
-            'last_updated': quote.get('07. latest trading day', ''),
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        save_cache(cache_key, result)
-        return jsonify(result)
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/stock-prices', methods=['POST'])
-def get_multiple_stock_prices():
-    """批量获取股票价格"""
-    data = request.get_json()
-    stocks = data.get('stocks', [])
-    
-    if not stocks:
-        return jsonify({'success': False, 'error': '未提供股票列表'}), 400
-    
-    results = []
-    
-    for stock in stocks[:10]:  # 限制数量
-        symbol = stock.get('symbol') or stock.get('code')
-        exchange = stock.get('exchange', 'US')
-        
-        cache_key = f'stock_{symbol}_{exchange}'
-        cached = load_cache(cache_key)
-        
-        if cached and cached.get('success'):
-            results.append(cached)
-    
-    return jsonify({
-        'success': True,
-        'results': results,
-        'total': len(results)
-    })
-
-# ==================== 健康检查 ====================
+@app.route('/api/gold-price', methods=['GET'])
+def api_gold_price():
+    # 调用你之前的 gold_scraper.py
+    return jsonify(get_gold_prices())
 
 @app.route('/api/health', methods=['GET'])
-def health_check():
-    ai_status = 'configured' if (ai_parser.anthropic_api_key or 
-                                 ai_parser.groq_api_key or 
-                                 ai_parser.openai_api_key) else 'not_configured'
-    
-    return jsonify({
-        'status': 'ok',
-        'timestamp': datetime.now().isoformat(),
-        'services': {
-            'gold_price': 'ok',
-            'stock_price': 'ok' if ALPHA_VANTAGE_KEY else 'api_key_missing',
-            'ai_parser': ai_status
-        },
-        'ai_available': {
-            'anthropic': bool(ai_parser.anthropic_api_key),
-            'groq': bool(ai_parser.groq_api_key),
-            'openai': bool(ai_parser.openai_api_key)
-        }
-    })
-
-@app.route('/')
-def index():
-    return jsonify({
-        'name': 'AI增强资产管理API服务器',
-        'version': '3.0',
-        'endpoints': {
-            '/api/gold-price': 'GET - 获取916金实时价格',
-            '/api/stock-price/<symbol>': 'GET - 获取股票价格',
-            '/api/stock-prices': 'POST - 批量获取股票价格',
-            '/api/parse-statement-ai': 'POST - AI解析账单文件',
-            '/api/health': 'GET - 健康检查'
-        },
-        'features': {
-            'ai_parsing': 'AI辅助账单解析',
-            'multi_format': '支持Excel, PDF, 图片',
-            'intelligent_extraction': '智能数据提取'
-        }
-    })
+def health():
+    return jsonify({'status': 'ok', 'ai_ready': bool(os.getenv('OPENAI_API_KEY'))})
 
 if __name__ == '__main__':
-    print("=" * 70)
-    print("🤖 AI增强资产管理API服务器启动中...")
-    print("=" * 70)
-    
-    print(f"\n✅ Alpha Vantage API: {'已配置' if ALPHA_VANTAGE_KEY else '未配置'}")
-    print(f"🤖 AI服务状态:")
-    print(f"   - Anthropic Claude: {'✅ 已配置' if ai_parser.anthropic_api_key else '❌ 未配置'}")
-    print(f"   - Groq: {'✅ 已配置' if ai_parser.groq_api_key else '❌ 未配置'}")
-    print(f"   - OpenAI: {'✅ 已配置' if ai_parser.openai_api_key else '❌ 未配置'}")
-    
-    print("\n📡 可用端点:")
-    print("  - /api/gold-price")
-    print("  - /api/stock-price/<symbol>")
-    print("  - /api/parse-statement-ai (NEW! AI解析)")
-    print("  - /api/health")
-    print("\n📖 文档: /")
-    print("=" * 70)
-    
-    port = int(os.getenv('PORT', 10000))
+    # Render 环境会自动分配 PORT
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
