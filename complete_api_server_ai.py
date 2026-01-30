@@ -19,10 +19,10 @@ def api_parse_statement():
     filename = file.filename
     ext = filename.split('.')[-1].lower()
     
-    # 自动识别类型
+    # 只要是 pdf 就传 pdf，其余传 image
     file_type = 'pdf' if ext == 'pdf' else 'image'
     
-    # 调用 Gemini 解析
+    # 这里会得到包含 summary (grand_total) 的结果
     result = ai_handler.parse_file_with_ai(content, file_type, filename)
     return jsonify(result)
 
