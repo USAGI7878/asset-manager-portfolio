@@ -2,390 +2,363 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"="width=device-width, initial-scale=1.0">
-  <title>🤖 AI资产管理系统</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🤖 AI 资产管理系统 Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .nav-tab.active { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100">
-  <div class="container mx-auto p-4 md:p-8">
-    <div class="bg-white rounded-lg shadow-xl p-6">
-      <!-- Header -->
-      <div class="border-b pb-4 mb-6">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">
-          🤖 AI智能资产管理系统
-        </h1>
-        <p class="text-gray-600">使用AI技术自动识别和分析您的资产账单</p>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+  <div class="container mx-auto p-4 max-w-4xl">
+    <header class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">AI 智能资产看板</h1>
+          <p class="text-sm text-slate-500">实时追踪您的投资组合收益</p>
+        </div>
+        <div id="connection-status" class="text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 font-medium">
+          API 未连接
+        </div>
+      </div>
+    </header>
+
+    <nav class="flex bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
+      <button onclick="showTab('overview')" id="btn-overview" class="nav-tab active flex-1 py-4 font-bold text-slate-500 transition-all hover:bg-slate-50">📊 总资产</button>
+      <button onclick="showTab('stocks')" id="btn-stocks" class="nav-tab flex-1 py-4 font-bold text-slate-500 transition-all hover:bg-slate-50">📈 股票</button>
+      <button onclick="showTab('gold')" id="btn-gold" class="nav-tab flex-1 py-4 font-bold text-slate-500 transition-all hover:bg-slate-50">💰 黄金储备</button>
+      <button onclick="showTab('upload')" id="btn-upload" class="nav-tab flex-1 py-4 font-bold text-slate-500 transition-all hover:bg-slate-50">⚙️ 配置/AI</button>
+    </nav>
+
+    <section id="tab-overview" class="tab-content active space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500">
+          <p class="text-sm text-slate-500 font-medium uppercase">当前总市值</p>
+          <h2 id="total-val-display" class="text-3xl font-black text-slate-900 mt-1">RM 0.00</h2>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-green-500">
+          <p class="text-sm text-slate-500 font-medium uppercase">累计总盈亏 (Profit)</p>
+          <h2 id="total-profit-display" class="text-3xl font-black text-green-600 mt-1">+RM 0.00</h2>
+        </div>
+      </div>
+      
+      <div class="bg-white p-6 rounded-2xl shadow-sm">
+        <h3 class="font-bold mb-4 flex items-center"><span>📦 资产配置占比</span></h3>
+        <div class="h-[300px] flex justify-center">
+          <canvas id="mainAssetChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-stocks" class="tab-content space-y-6">
+      <div class="flex justify-between items-center">
+        <h3 class="text-xl font-bold">持仓详情</h3>
+        <button onclick="refreshMarketPrices()" class="text-sm bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">🔄 更新市场价</button>
       </div>
 
-      <!-- API配置 -->
-      <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-        <label class="block mb-2 font-semibold text-gray-700">🔧 API服务器地址:</label>
-        <input 
-          type="text" 
-          id="apiUrl" 
-          class="w-full px-4 py-2 border rounded-lg mb-3 focus:ring-2 focus:ring-blue-500"
-          placeholder="https://your-api.onrender.com"
-        />
-        <div class="flex gap-2 flex-wrap">
-          <button 
-            onclick="testApi()" 
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-          >
-            🔍 测试连接
-          </button>
-          <button 
-            onclick="getGoldPrice()" 
-            class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
-          >
-            💰 获取金价
-          </button>
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div class="bg-blue-50 px-6 py-3 border-b border-blue-100 flex justify-between">
+          <span class="font-bold text-blue-700">🇲🇾 马来西亚股票</span>
+          <span id="my-stock-total" class="font-semibold">RM 0.00</span>
+        </div>
+        <div id="my-stock-list" class="divide-y text-sm">
+          <p class="p-6 text-center text-slate-400">暂无数据，请通过 AI 解析或手动添加</p>
         </div>
       </div>
 
-      <!-- AI账单上传 -->
-      <div class="mb-6 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">
-          🤖 AI智能账单解析
-        </h2>
-        <p class="text-gray-600 mb-4">
-          上传您的券商月结单（PDF/Excel），AI将自动识别股票持仓、资产分配等信息
-        </p>
+      <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div class="bg-indigo-50 px-6 py-3 border-b border-indigo-100 flex justify-between">
+          <span class="font-bold text-indigo-700">🇺🇸 美国股票</span>
+          <span id="us-stock-total" class="font-semibold">$ 0.00</span>
+        </div>
+        <div id="us-stock-list" class="divide-y text-sm">
+          <p class="p-6 text-center text-slate-400">暂无数据</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-gold" class="tab-content space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm">
+        <h3 class="text-xl font-bold mb-4 text-yellow-700">💰 黄金价值分析</h3>
+        <div class="grid grid-cols-2 gap-4 mb-6 text-center">
+          <div class="p-4 bg-yellow-50 rounded-xl">
+            <p class="text-xs text-yellow-600 uppercase">999 纯金单价</p>
+            <p id="gold-price-999" class="text-lg font-bold">RM ---</p>
+          </div>
+          <div class="p-4 bg-orange-50 rounded-xl">
+            <p class="text-xs text-orange-600 uppercase">916 回收单价</p>
+            <p id="gold-price-916" class="text-lg font-bold">RM ---</p>
+          </div>
+        </div>
         
-        <div class="mb-4">
-          <label class="block mb-2 font-semibold text-gray-700">
-            📄 选择文件 (支持PDF, Excel):
-          </label>
-          <input 
-            type="file" 
-            id="statementFile" 
-            accept=".pdf,.xlsx,.xls"
-            class="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg focus:border-purple-500 cursor-pointer"
-          />
-          <p class="text-sm text-gray-500 mt-2">
-            ✅ 支持格式: MOOMOO, Webull, 富途等券商PDF账单 | Excel资产表
-          </p>
+        <div class="space-y-4">
+          <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-xl">
+            <span class="text-2xl">🥇</span>
+            <div class="flex-1">
+              <p class="font-bold">999 纯金重量 (克)</p>
+              <input type="number" id="gold-weight-999" onchange="saveGoldWeights()" class="w-full bg-transparent border-b border-slate-300 focus:outline-none" placeholder="0.00">
+            </div>
+            <p id="val-999" class="font-bold text-slate-600 text-right">RM 0.00</p>
+          </div>
+          <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-xl">
+            <span class="text-2xl">💍</span>
+            <div class="flex-1">
+              <p class="font-bold">916 饰金重量 (克)</p>
+              <input type="number" id="gold-weight-916" onchange="saveGoldWeights()" class="w-full bg-transparent border-b border-slate-300 focus:outline-none" placeholder="0.00">
+            </div>
+            <p id="val-916" class="font-bold text-slate-600 text-right">RM 0.00</p>
+          </div>
         </div>
 
-        <button 
-          onclick="uploadStatement()" 
-          id="uploadBtn"
-          class="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-lg hover:from-purple-600 hover:to-pink-600 transition shadow-lg"
-        >
-          🚀 开始AI解析
-        </button>
+        <div class="mt-8 h-[250px]">
+          <canvas id="goldPieChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-upload" class="tab-content space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm">
+        <h3 class="font-bold mb-4">🔧 后端连接</h3>
+        <input type="text" id="apiUrl" class="w-full p-3 border rounded-xl mb-4" placeholder="https://your-app.onrender.com">
+        <button onclick="testConnection()" class="w-full py-3 bg-slate-800 text-white font-bold rounded-xl">测试并保存连接</button>
       </div>
 
-      <!-- 结果显示 -->
-      <div id="result" class="p-6 bg-gray-50 rounded-lg min-h-[200px] border">
-        <p class="text-gray-500 text-center">等待操作...</p>
+      <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+        <h3 class="text-xl font-bold mb-2">🤖 AI 账单解析</h3>
+        <p class="text-indigo-100 text-sm mb-4">上传券商 PDF 或 Excel 账单，AI 自动提取持仓数据。</p>
+        <input type="file" id="fileInput" class="block w-full text-sm text-slate-100 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-indigo-700 hover:file:bg-indigo-50">
+        <button onclick="handleAiUpload()" id="uploadBtn" class="w-full mt-4 py-3 bg-white text-indigo-700 font-bold rounded-xl shadow-md">开始 AI 智能识别</button>
       </div>
+    </section>
 
-      <!-- 使用说明 -->
-      <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-        <h3 class="font-bold text-green-800 mb-3">📖 使用说明</h3>
-        <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
-          <li><strong>配置API:</strong> 输入Render API地址，点击"测试连接"</li>
-          <li><strong>上传账单:</strong> 选择PDF或Excel文件</li>
-          <li><strong>AI解析:</strong> 点击"开始AI解析"，等待10-30秒</li>
-          <li><strong>查看结果:</strong> AI会自动提取股票代码、数量、成本等信息</li>
-          <li><strong>验证数据:</strong> 请检查AI提取的数据是否准确</li>
-        </ol>
-      </div>
-
-      <div class="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-        <h3 class="font-bold text-yellow-800 mb-2">⚙️ 配置AI API（可选）</h3>
-        <p class="text-sm text-gray-600">
-          要使用AI解析功能，需要在Render环境变量中配置以下之一:
-        </p>
-        <ul class="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
-          <li><code class="bg-gray-200 px-2 py-1 rounded">ANTHROPIC_API_KEY</code> - Claude AI</li>
-          <li><code class="bg-gray-200 px-2 py-1 rounded">GROQ_API_KEY</code> - Groq (免费)</li>
-          <li><code class="bg-gray-200 px-2 py-1 rounded">OPENAI_API_KEY</code> - GPT</li>
-        </ul>
-        <p class="text-sm text-gray-600 mt-2">
-          💡 推荐使用 <strong>Groq</strong> (免费且快速): <a href="https://console.groq.com" target="_blank" class="text-blue-600 underline">console.groq.com</a>
-        </p>
-      </div>
-    </div>
   </div>
 
   <script>
-    // 从localStorage加载API地址
-    window.addEventListener('DOMContentLoaded', () => {
+    // --- 数据状态管理 ---
+    let portfolio = {
+      stocks_my: [],
+      stocks_us: [],
+      cash: 0,
+      gold_999_weight: 0,
+      gold_916_weight: 0
+    };
+
+    let marketData = {
+      gold_999: 0,
+      gold_916: 0,
+      stock_prices: {}, // 缓存 symbol: price
+      usd_to_myr: 4.75 // 汇率暂定，可从 API 获取
+    };
+
+    let charts = {};
+
+    // --- 初始化 ---
+    window.onload = () => {
       const savedUrl = localStorage.getItem('apiUrl');
-      if (savedUrl) {
-        document.getElementById('apiUrl').value = savedUrl;
+      if (savedUrl) document.getElementById('apiUrl').value = savedUrl;
+      
+      const savedPortfolio = localStorage.getItem('my_portfolio');
+      if (savedPortfolio) {
+        portfolio = JSON.parse(savedPortfolio);
+        document.getElementById('gold-weight-999').value = portfolio.gold_999_weight || 0;
+        document.getElementById('gold-weight-916').value = portfolio.gold_916_weight || 0;
       }
-    });
+      
+      testConnection();
+      renderAll();
+    };
 
-    // 测试API连接
-    async function testApi() {
-      const apiUrl = document.getElementById('apiUrl').value.trim();
-      if (!apiUrl) {
-        alert('请输入API服务器地址');
-        return;
-      }
-      localStorage.setItem('apiUrl', apiUrl);
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = '<p class="text-blue-600">⏳ 正在连接...</p>';
-      try {
-        const response = await fetch(`${apiUrl}/api/health`);
-        const data = await response.json();
-        resultDiv.innerHTML = `
-          <div class="text-green-600">
-            <p class="font-bold mb-2 text-lg">✅ API连接成功！</p>
-            <div class="bg-white p-4 rounded-lg">
-              <p class="mb-2"><strong>服务状态:</strong></p>
-              <ul class="list-disc list-inside space-y-1 text-sm">
-                <li>金价API: ${data.services.gold_price === 'ok' ? '✅' : '❌'}</li>
-                <li>股票API: ${data.services.stock_price === 'ok' ? '✅' : '❌'}</li>
-                <li>AI解析: ${data.services.ai_parser === 'configured' ? '✅ 已配置' : '⚠️ 未配置'}</li>
-              </ul>
-              ${data.ai_available ? `
-                <p class="mt-3 text-sm"><strong>可用AI:</strong></p>
-                <ul class="list-disc list-inside text-sm">
-                  ${data.ai_available.anthropic ? '<li>✅ Anthropic Claude</li>' : ''}
-                  ${data.ai_available.groq ? '<li>✅ Groq</li>' : ''}
-                  ${data.ai_available.openai ? '<li>✅ OpenAI</li>' : ''}
-                </ul>
-              ` : ''}
-            </div>
-          </div>
-        `;
-      } catch (error) {
-        resultDiv.innerHTML = `
-          <div class="text-red-600">
-            <p class="font-bold">❌ 连接失败</p>
-            <p class="text-sm mt-2">${error.message}</p>
-          </div>
-        `;
-      }
+    // --- 导航逻辑 ---
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.getElementById('btn-' + tabId).classList.add('active');
+      if(tabId === 'overview' || tabId === 'gold') renderCharts();
     }
 
-    // 获取金价
-    async function getGoldPrice() {
-      const apiUrl = document.getElementById('apiUrl').value.trim();
-      if (!apiUrl) {
-        alert('请先输入API服务器地址');
-        return;
-      }
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = '<p class="text-blue-600">⏳ 正在获取金价...</p>';
+    // --- API 调用 ---
+    async function testConnection() {
+      const url = document.getElementById('apiUrl').value;
+      localStorage.setItem('apiUrl', url);
+      const statusEl = document.getElementById('connection-status');
+      
       try {
-        const response = await fetch(`${apiUrl}/api/gold-price`);
-        const data = await response.json();
+        const res = await fetch(`${url}/api/gold-price`);
+        const data = await res.json();
         if (data.success) {
-          const prices = data.data;
-          resultDiv.innerHTML = `
-            <div class="text-green-600">
-              <p class="font-bold text-xl mb-3">✅ 916金价已更新！</p>
-              <div class="bg-white p-4 rounded-lg space-y-2">
-                <p><span class="font-semibold">零售价:</span> RM ${prices.gold_916}/克</p>
-                <p><span class="font-semibold">回收价 (93%):</span> RM ${prices.gold_916_buyback_93}/克</p>
-                <p><span class="font-semibold">回收价 (95%):</span> RM ${prices.gold_916_buyback_95}/克</p>
-                <p class="text-sm text-gray-600 mt-3">更新时间: ${prices.last_updated}</p>
-                <p class="text-sm text-gray-600">数据来源: ${prices.source}</p>
-              </div>
-            </div>
-          `;
+          statusEl.innerText = "API 已连接";
+          statusEl.className = "text-xs px-3 py-1 rounded-full bg-green-100 text-green-600 font-medium";
+          marketData.gold_999 = data.data.gold_999;
+          marketData.gold_916 = data.data.gold_916_buyback_93;
+          renderAll();
         }
-      } catch (error) {
-        resultDiv.innerHTML = `<div class="text-red-600"><p>❌ ${error.message}</p></div>`;
+      } catch (e) {
+        statusEl.innerText = "连接失败";
       }
     }
 
-    // 上传账单
-    async function uploadStatement() {
-      const apiUrl = document.getElementById('apiUrl').value.trim();
-      if (!apiUrl) {
-        alert('请先输入API服务器地址');
-        return;
-      }
-
-      const fileInput = document.getElementById('statementFile');
-      const file = fileInput.files[0];
-      
-      if (!file) {
-        alert('请选择文件');
-        return;
-      }
-
-      const resultDiv = document.getElementById('result');
-      const uploadBtn = document.getElementById('uploadBtn');
-      
-      uploadBtn.disabled = true;
-      uploadBtn.innerHTML = '⏳ AI分析中...（可能需要10-30秒）';
-      uploadBtn.classList.add('opacity-50', 'cursor-not-allowed');
-      
-      resultDiv.innerHTML = `
-        <div class="text-blue-600 text-center">
-          <div class="animate-pulse">
-            <p class="text-xl font-bold mb-2">🤖 AI正在分析您的账单...</p>
-            <p class="text-sm">这可能需要10-30秒，请耐心等待</p>
-          </div>
-        </div>
-      `;
+    async function refreshMarketPrices() {
+      const url = localStorage.getItem('apiUrl');
+      const symbols = [
+        ...portfolio.stocks_my.map(s => s.symbol),
+        ...portfolio.stocks_us.map(s => s.symbol)
+      ];
+      if (symbols.length === 0) return;
 
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch(`${apiUrl}/api/parse-statement-ai`, {
+        const res = await fetch(`${url}/api/stock-prices`, {
           method: 'POST',
-          body: formData
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ symbols })
         });
-
-        const data = await response.json();
-
+        const data = await res.json();
         if (data.success) {
-          displayResults(data);
-        } else {
-          resultDiv.innerHTML = `
-            <div class="text-red-600">
-              <p class="font-bold text-lg">❌ 解析失败</p>
-              <p class="mt-2">${data.error}</p>
-              ${data.raw_response ? `
-                <details class="mt-3">
-                  <summary class="cursor-pointer text-sm">查看AI响应</summary>
-                  <pre class="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">${data.raw_response}</pre>
-                </details>
-              ` : ''}
-            </div>
-          `;
+          marketData.stock_prices = data.prices;
+          renderAll();
         }
-      } catch (error) {
-        resultDiv.innerHTML = `
-          <div class="text-red-600">
-            <p class="font-bold">❌ 上传失败</p>
-            <p class="text-sm mt-2">${error.message}</p>
-          </div>
-        `;
+      } catch (e) { alert("更新股价失败: " + e.message); }
+    }
+
+    // --- AI 上传处理 ---
+    async function handleAiUpload() {
+      const url = localStorage.getItem('apiUrl');
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return alert("请先选择文件");
+
+      const btn = document.getElementById('uploadBtn');
+      btn.innerText = "⏳ AI 正在分析中...";
+      btn.disabled = true;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch(`${url}/api/parse-statement-ai`, { method: 'POST', body: formData });
+        const result = await res.json();
+        if (result.success) {
+          portfolio.stocks_my = result.data.stocks_my || [];
+          portfolio.stocks_us = result.data.stocks_us || [];
+          portfolio.cash = result.data.cash_balance || 0;
+          savePortfolio();
+          alert("AI 解析成功！已更新持仓数据。");
+          showTab('stocks');
+          refreshMarketPrices();
+        } else {
+          alert("解析失败: " + result.error);
+        }
+      } catch (e) {
+        alert("上传出错: " + e.message);
       } finally {
-        uploadBtn.disabled = false;
-        uploadBtn.innerHTML = '🚀 开始AI解析';
-        uploadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        btn.innerText = "开始 AI 智能识别";
+        btn.disabled = false;
       }
     }
 
-    // 显示解析结果
-    function displayResults(data) {
-      const resultDiv = document.getElementById('result');
-      const parsed = data.data;
-      const report = data.report;
+    // --- 数据存储与渲染 ---
+    function savePortfolio() {
+      localStorage.setItem('my_portfolio', JSON.stringify(portfolio));
+    }
 
-      let html = `
-        <div class="space-y-4">
-          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 class="text-xl font-bold text-green-800 mb-3">✅ AI解析成功！</h3>
-            
-            ${report ? `
-              <div class="bg-white rounded-lg p-4 mb-4">
-                <h4 class="font-bold text-gray-800 mb-2">📊 资产概览</h4>
-                <div class="grid grid-cols-2 gap-3 text-sm">
-                  <div><span class="text-gray-600">总资产:</span> <span class="font-bold">RM ${report.summary.total_assets.toFixed(2)}</span></div>
-                  <div><span class="text-gray-600">现金余额:</span> <span class="font-bold">RM ${report.summary.cash_balance.toFixed(2)}</span></div>
-                  <div><span class="text-gray-600">马股市值:</span> <span class="font-bold">RM ${report.summary.stock_holdings_my.toFixed(2)}</span></div>
-                  <div><span class="text-gray-600">美股市值:</span> <span class="font-bold">RM ${report.summary.stock_holdings_us.toFixed(2)}</span></div>
-                </div>
-              </div>
-            ` : ''}
-      `;
+    function saveGoldWeights() {
+      portfolio.gold_999_weight = parseFloat(document.getElementById('gold-weight-999').value) || 0;
+      portfolio.gold_916_weight = parseFloat(document.getElementById('gold-weight-916').value) || 0;
+      savePortfolio();
+      renderAll();
+    }
 
-      // 显示马股
-      if (parsed.stocks_my && parsed.stocks_my.length > 0) {
-        html += `
-          <div class="bg-white rounded-lg p-4 border">
-            <h4 class="font-bold text-gray-800 mb-3">🇲🇾 马股持仓 (${parsed.stocks_my.length})</h4>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead class="bg-gray-100">
-                  <tr>
-                    <th class="p-2 text-left">代码</th>
-                    <th class="p-2 text-right">数量</th>
-                    <th class="p-2 text-right">成本价</th>
-                    <th class="p-2 text-right">市值</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${parsed.stocks_my.map(stock => `
-                    <tr class="border-t">
-                      <td class="p-2">${stock.symbol}</td>
-                      <td class="p-2 text-right">${stock.shares}</td>
-                      <td class="p-2 text-right">RM ${stock.avgPrice.toFixed(2)}</td>
-                      <td class="p-2 text-right font-semibold">RM ${(stock.shares * stock.avgPrice).toFixed(2)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
+    function renderAll() {
+      // 更新金价显示
+      document.getElementById('gold-price-999').innerText = marketData.gold_999 ? `RM ${marketData.gold_999}` : '---';
+      document.getElementById('gold-price-916').innerText = marketData.gold_916 ? `RM ${marketData.gold_916}` : '---';
+      
+      const v999 = (portfolio.gold_999_weight * marketData.gold_999);
+      const v916 = (portfolio.gold_916_weight * marketData.gold_916);
+      document.getElementById('val-999').innerText = `RM ${v999.toFixed(2)}`;
+      document.getElementById('val-916').innerText = `RM ${v916.toFixed(2)}`;
+
+      // 渲染列表
+      renderStockList('my', portfolio.stocks_my, 'RM');
+      renderStockList('us', portfolio.stocks_us, '$');
+
+      // 计算总数
+      let myMarketTotal = portfolio.stocks_my.reduce((acc, s) => acc + (marketData.stock_prices[s.symbol] || s.avgPrice) * s.shares, 0);
+      let usMarketTotal = portfolio.stocks_us.reduce((acc, s) => acc + (marketData.stock_prices[s.symbol] || s.avgPrice) * s.shares, 0);
+      let myCostTotal = portfolio.stocks_my.reduce((acc, s) => acc + (s.avgPrice * s.shares), 0);
+      let usCostTotal = portfolio.stocks_us.reduce((acc, s) => acc + (s.avgPrice * s.shares), 0);
+
+      document.getElementById('my-stock-total').innerText = `RM ${myMarketTotal.toFixed(2)}`;
+      document.getElementById('us-stock-total').innerText = `$ ${usMarketTotal.toFixed(2)}`;
+
+      const totalValueMYR = myMarketTotal + (usMarketTotal * marketData.usd_to_myr) + v999 + v916 + (portfolio.cash || 0);
+      const totalCostMYR = myCostTotal + (usCostTotal * marketData.usd_to_myr) + (v999 + v916) + (portfolio.cash || 0); // 黄金假设当前即成本
+
+      document.getElementById('total-val-display').innerText = `RM ${totalValueMYR.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+      const profit = totalValueMYR - totalCostMYR;
+      const profitEl = document.getElementById('total-profit-display');
+      profitEl.innerText = `${profit >= 0 ? '+' : ''}RM ${profit.toFixed(2)}`;
+      profitEl.className = `text-3xl font-black mt-1 ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`;
+
+      renderCharts(myMarketTotal, usMarketTotal * marketData.usd_to_myr, v999, v916);
+    }
+
+    function renderStockList(market, stocks, symbol) {
+      const container = document.getElementById(`${market}-stock-list`);
+      if (stocks.length === 0) {
+        container.innerHTML = '<p class="p-6 text-center text-slate-400">暂无数据</p>';
+        return;
+      }
+
+      container.innerHTML = stocks.map(s => {
+        const currentPrice = marketData.stock_prices[s.symbol] || s.avgPrice;
+        const value = currentPrice * s.shares;
+        const profit = (currentPrice - s.avgPrice) * s.shares;
+        return `
+          <div class="p-4 flex justify-between items-center hover:bg-slate-50">
+            <div>
+              <p class="font-bold text-slate-900">${s.symbol}</p>
+              <p class="text-xs text-slate-500">${s.shares} 股 @ 成本 ${symbol}${s.avgPrice}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-bold">${symbol}${value.toFixed(2)}</p>
+              <p class="text-xs ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">${profit >= 0 ? '▲' : '▼'} ${profit.toFixed(2)}</p>
             </div>
           </div>
         `;
-      }
+      }).join('');
+    }
 
-      // 显示美股
-      if (parsed.stocks_us && parsed.stocks_us.length > 0) {
-        html += `
-          <div class="bg-white rounded-lg p-4 border">
-            <h4 class="font-bold text-gray-800 mb-3">🇺🇸 美股持仓 (${parsed.stocks_us.length})</h4>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead class="bg-gray-100">
-                  <tr>
-                    <th class="p-2 text-left">代码</th>
-                    <th class="p-2 text-right">数量</th>
-                    <th class="p-2 text-right">成本价</th>
-                    <th class="p-2 text-right">市值</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${parsed.stocks_us.map(stock => `
-                    <tr class="border-t">
-                      <td class="p-2">${stock.symbol}</td>
-                      <td class="p-2 text-right">${stock.shares}</td>
-                      <td class="p-2 text-right">$${stock.avgPrice.toFixed(2)}</td>
-                      <td class="p-2 text-right font-semibold">$${(stock.shares * stock.avgPrice).toFixed(2)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        `;
-      }
+    function renderCharts(myStockVal, usStockVal, g999, g916) {
+      const ctxMain = document.getElementById('mainAssetChart');
+      if (charts.main) charts.main.destroy();
+      charts.main = new Chart(ctxMain, {
+        type: 'doughnut',
+        data: {
+          labels: ['马股', '美股', '999黄金', '916黄金', '现金'],
+          datasets: [{
+            data: [myStockVal, usStockVal, g999, g916, portfolio.cash],
+            backgroundColor: ['#3b82f6', '#6366f1', '#fbbf24', '#f59e0b', '#10b981']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
 
-      // 显示其他资产
-      if (parsed.liquid_assets && parsed.liquid_assets.length > 0) {
-        html += `
-          <div class="bg-white rounded-lg p-4 border">
-            <h4 class="font-bold text-gray-800 mb-3">💰 可动资产 (${parsed.liquid_assets.length})</h4>
-            <ul class="space-y-2 text-sm">
-              ${parsed.liquid_assets.map(asset => `
-                <li class="flex justify-between border-b pb-2">
-                  <span>${asset.name}</span>
-                  <span class="font-semibold">RM ${asset.value.toFixed(2)}</span>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-        `;
-      }
-
-      html += `
-          <div class="bg-blue-50 rounded-lg p-4 text-sm">
-            <p class="text-gray-600">
-              ${data.ai_analysis ? `
-                <span class="font-semibold">提取方式:</span> ${data.ai_analysis.extraction_method}<br>
-              ` : ''}
-              <span class="font-semibold">解析时间:</span> ${new Date(data.timestamp).toLocaleString('zh-CN')}
-            </p>
-            <p class="text-yellow-700 mt-2">
-              ⚠️ 请仔细核对AI提取的数据是否准确！
-            </p>
-          </div>
-        </div>
-      `;
-
-      resultDiv.innerHTML = html;
+      const ctxGold = document.getElementById('goldPieChart');
+      if (charts.gold) charts.gold.destroy();
+      charts.gold = new Chart(ctxGold, {
+        type: 'pie',
+        data: {
+          labels: ['999 纯金', '916 饰金'],
+          datasets: [{
+            data: [g999, g916],
+            backgroundColor: ['#fbbf24', '#f59e0b']
+          }]
+        }
+      });
     }
   </script>
 </body>
