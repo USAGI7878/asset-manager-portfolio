@@ -6,3 +6,5 @@ python-dotenv
 pandas
 gunicorn
 beautifulsoup4
+google-generativeai
+Pillow
