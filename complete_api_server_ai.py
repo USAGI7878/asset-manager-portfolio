@@ -41,5 +41,6 @@ def health():
     return jsonify({'status': 'ok', 'google_ready': bool(os.getenv('GOOGLE_API_KEY'))})
 
 if __name__ == '__main__':
-    # host='0.0.0.0' 表示允许局域网内所有设备访问
+    # host='0.0.0.0' 是关键，代表监听电脑所有的 IP 地址
+    # port=5000 确保端口一致
     app.run(host='0.0.0.0', port=5000, debug=True)
