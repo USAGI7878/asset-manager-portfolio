@@ -41,5 +41,5 @@ def health():
     return jsonify({'status': 'ok', 'google_ready': bool(os.getenv('GOOGLE_API_KEY'))})
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    # host='0.0.0.0' 表示允许局域网内所有设备访问
+    app.run(host='0.0.0.0', port=5000, debug=True)
