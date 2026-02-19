@@ -39,6 +39,6 @@ def api_gold_price():
 @app.route('/api/health', methods=['GET'])
 def health():
     return jsonify({'status': 'ok', 'google_ready': bool(os.getenv('GOOGLE_API_KEY'))})
+
 if __name__ == '__main__':
-    # 这样写才能保证你的电脑 IP (192.168.1.134) 能被访问
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
